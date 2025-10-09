@@ -1,0 +1,15 @@
+# Build and temp artifacts
+logs/
+temp/
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# LuaRocks
+luarocks/
+rockspec/*.src.rock
+
+# IDE metadata
+.vscode/
+.idea/
