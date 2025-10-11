@@ -12,10 +12,6 @@ local function hasTimer()
     return hasField("timer")
 end
 
-local function hasWaitUntil()
-    return hasTimer() and type(hs.timer.waitUntil) == "function"
-end
-
 local function sleep(ms)
     if not ms or ms <= 0 then
         return
@@ -92,11 +88,21 @@ function M.waitForModifiers(interval)
     if not (hasField("timer") and hasField("eventtap")) then
         return true
     end
-    local _ = interval
-    return hs.timer.waitUntil(function()
+    local waitInterval = interval or 50
+    local attempts = 0
+    local maxAttempts = math.floor((5000 / waitInterval) + 0.5)
+    if maxAttempts < 1 then
+        maxAttempts = 1
+    end
+    while attempts < maxAttempts do
         local mods = hs.eventtap.checkKeyboardModifiers()
-        return not (mods and (mods.cmd or mods.alt or mods.ctrl or mods.shift))
-    end)
+        if not (mods and (mods.cmd or mods.alt or mods.ctrl or mods.shift)) then
+            return true
+        end
+        sleep(waitInterval)
+        attempts = attempts + 1
+    end
+    return false
 end
 
 function M.waitForClipboardChange(original, opts)
@@ -124,29 +130,6 @@ function M.waitForClipboardChange(original, opts)
     local immediate = readChanged()
     if immediate then
         return immediate
-    end
-
-    if hasWaitUntil() then
-        local captured
-        local found = false
-        local attempts = 0
-        local intervalSeconds = pollInterval / 1000
-        hs.timer.waitUntil(function()
-            attempts = attempts + 1
-            local value = readChanged()
-            if value then
-                captured = value
-                found = true
-                return true
-            end
-            if maxPolls > 0 and attempts >= maxPolls then
-                return true
-            end
-            return false
-        end, nil, intervalSeconds)
-        if found then
-            return captured
-        end
     end
 
     for _ = 1, maxPolls do

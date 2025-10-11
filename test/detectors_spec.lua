@@ -11,10 +11,19 @@ describe("detectors", function()
         local registry = helper.requireFresh("detectors.registry")
         local log = hs.logger.new("test", "debug")
         local firstCalled = {}
-        local detectorA = { id = "a", priority = 10, match = function() table.insert(firstCalled, "a") return nil end }
-        local detectorB = { id = "b", priority = 5, match = function() table.insert(firstCalled, "b") return "hit" end }
+        local detectorA = { id = "a", priority = 10, match = function()
+            table.insert(firstCalled, "a")
+            return nil
+        end }
+        local detectorB = { id = "b", priority = 5, match = function()
+            table.insert(firstCalled, "b")
+            return "hit"
+        end }
         local r = registry.new(log, { detectorB, detectorA })
-        r:register({ id = "c", priority = 7, match = function() table.insert(firstCalled, "c") return nil end })
+        r:register({ id = "c", priority = 7, match = function()
+            table.insert(firstCalled, "c")
+            return nil
+        end })
         local result, id = r:process("input", {})
         assert.equal("hit", result)
         assert.equal("b", id)
@@ -133,5 +142,70 @@ describe("detectors", function()
         }
         local blocked = detector.match(detector, "5551234567;home", context)
         assert.is_nil(blocked)
+    end)
+
+    it("opens local paths in QSpace via navigation detector", function()
+        local ctor = helper.requireFresh("detectors.navigation")
+        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local context = {}
+        local result = detector:match("~/Documents", context)
+        assert.is_table(result)
+        assert.equal("~/Documents", result.output)
+        assert.is_true(result.sideEffectOnly)
+        assert.is_table(context.__lastSideEffect)
+        assert.equal("qspace", context.__lastSideEffect.type)
+        assert.equal("Opened in QSpace", context.__lastSideEffect.message)
+        assert.equal(1, #helper.taskInvocations)
+        local invocation = helper.taskInvocations[1]
+        assert.equal("/usr/bin/open", invocation.command)
+        assert.same({ "-a", "QSpace Pro", (os.getenv("HOME") or "") .. "/Documents" }, invocation.args)
+    end)
+
+    it("opens http urls in the default browser", function()
+        local ctor = helper.requireFresh("detectors.navigation")
+        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local context = {}
+        local url = "https://example.com/path"
+        local result = detector:match(url, context)
+        assert.is_table(result)
+        assert.equal(url, result.output)
+        assert.equal(url, helper.openedUrls[#helper.openedUrls])
+        assert.equal("browser", context.__lastSideEffect.type)
+    end)
+
+    it("opens application urls using open -u", function()
+        local ctor = helper.requireFresh("detectors.navigation")
+        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local context = {}
+        local appUrl = "obsidian://open?vault=Main"
+        local result = detector:match(appUrl, context)
+        assert.is_table(result)
+        assert.equal(appUrl, result.output)
+        assert.equal(1, #helper.taskInvocations)
+        local invocation = helper.taskInvocations[1]
+        assert.equal("/usr/bin/open", invocation.command)
+        assert.same({ "-u", appUrl }, invocation.args)
+        assert.equal("app_url", context.__lastSideEffect.type)
+    end)
+
+    it("falls back to Kagi search when no detectors match", function()
+        local ctor = helper.requireFresh("detectors.navigation")
+        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local context = {}
+        local query = "example search"
+        local _ = detector:match(query, context)
+        assert.equal("kagi_search", context.__lastSideEffect.type)
+        local opened = helper.openedUrls[#helper.openedUrls]
+        assert.matches("https://kagi.com/search%?q=", opened)
+        assert.matches("example%%20search", opened)
+    end)
+
+    it("skips navigation when a prior detector matches", function()
+        local ctor = helper.requireFresh("detectors.navigation")
+        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local context = { __matches = { { id = "arithmetic" } } }
+        local result = detector:match("https://example.com", context)
+        assert.is_nil(result)
+        assert.equal(0, #helper.openedUrls)
     end)
 end)

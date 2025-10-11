@@ -110,11 +110,11 @@ describe("ClipboardFormatter", function()
                 },
             },
         })
-    local logs = instance.logger.messages or {}
-    local before = #logs
-    instance.logger:w("structured message")
-    local entry = instance.logger.messages and instance.logger.messages[before + 1]
-    assert.is_not_nil(entry)
+        local logs = instance.logger.messages or {}
+        local before = #logs
+        instance.logger:w("structured message")
+        local entry = instance.logger.messages and instance.logger.messages[before + 1]
+        assert.is_not_nil(entry)
         assert.same("w", entry.method)
         assert.equal('{"level":"warning","message":"structured message"}', entry.args[1])
         assert.equal("debug", instance.logger.level)
@@ -128,9 +128,11 @@ describe("ClipboardFormatter", function()
         instance:applyHooks(function()
             table.insert(called, "func")
         end)
-        instance:applyHooks({ detectors = function()
-            table.insert(called, "table")
-        end })
+        instance:applyHooks({
+            detectors = function()
+                table.insert(called, "table")
+            end
+        })
         assert.same({ "func", "table" }, called)
     end)
 
@@ -215,6 +217,28 @@ return {
         assert.is_true(ok)
         assert.equal("2", helper.getClipboard())
         assert.equal("Formatted clipboard", helper.alerts[#helper.alerts])
+    end)
+
+    it("returns side effects for navigation matches", function()
+        local instance = Formatter:init()
+        local _, _, _, sideEffect = instance:processClipboard("https://example.com")
+        assert.is_table(sideEffect)
+        assert.equal("browser", sideEffect.type)
+        assert.equal("https://example.com", helper.openedUrls[#helper.openedUrls])
+    end)
+
+    it("executes navigation side effects via formatClipboardDirect", function()
+        local instance = Formatter:init()
+        helper.setClipboard("obsidian://open?vault=Main")
+        helper.clearAlerts()
+        local ok = instance:formatClipboardDirect()
+        assert.is_true(ok)
+        assert.equal("obsidian://open?vault=Main", helper.getClipboard())
+        assert.equal("Opened application URL", helper.alerts[#helper.alerts])
+        assert.equal(1, #helper.taskInvocations)
+        local invocation = helper.taskInvocations[1]
+        assert.equal("/usr/bin/open", invocation.command)
+        assert.same({ "-u", "obsidian://open?vault=Main" }, invocation.args)
     end)
 
     it("formats selection via helper module", function()

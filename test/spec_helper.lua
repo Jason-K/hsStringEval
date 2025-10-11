@@ -82,6 +82,8 @@ local helper = {
     lastHotkeySpec = nil,
     osascriptHandler = nil,
     waitUntilCalls = 0,
+    taskInvocations = {},
+    openedUrls = {},
 }
 
 local function toNamespaced(name)
@@ -133,6 +135,8 @@ local function resetHs()
     helper.windowFocused = false
     helper.modifiers = nil
     helper.waitUntilCalls = 0
+    helper.taskInvocations = {}
+    helper.openedUrls = {}
     clipboardState.primary = ""
     clipboardState.find = ""
     clipboardState.selection = nil
@@ -276,9 +280,40 @@ local hsStub = {
         mkdir = function(path)
             helper.createdDirs[path] = true
         end,
+        pathToAbsolute = function(path)
+            return path
+        end,
     },
     pathwatcher = {
         new = pathwatcherNew,
+    },
+    task = {
+        new = function(command, exitHandler, _, args)
+            local record = {
+                command = command,
+                args = args,
+                started = false,
+            }
+            table.insert(helper.taskInvocations, record)
+            return {
+                setEnvironment = function(_, env)
+                    record.env = env
+                end,
+                start = function()
+                    record.started = true
+                    if type(exitHandler) == "function" then
+                        exitHandler(0, nil, nil)
+                    end
+                    return true
+                end,
+            }
+        end,
+    },
+    urlevent = {
+        openURL = function(url)
+            table.insert(helper.openedUrls, url)
+            return true
+        end,
     },
     spoonsLoaded = {},
 }

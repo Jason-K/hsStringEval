@@ -33,6 +33,7 @@ local detectorConstructors = {
     requireFromRoot("detectors.pd"),
     requireFromRoot("detectors.combinations"),
     requireFromRoot("detectors.phone"),
+    requireFromRoot("detectors.navigation"),
 }
 
 local function deepCopy(tbl)
@@ -172,21 +173,17 @@ function obj:processClipboard(content)
     local throttleMs = tonumber(processingCfg.throttleMs) or 0
     local now = hsUtils.nowMillis()
     local last = self._lastProcessing
-    local throttledResult = nil
     if throttleMs > 0 then
         if type(last) == "table" then
             local sameFingerprint = last.fingerprint == trimmed
             local withinWindow = (now - last.timestamp) <= throttleMs
             if sameFingerprint and withinWindow then
-                throttledResult = last.result
+                if self.logger and self.logger.d then
+                    self.logger.d("Skipping processing within throttle window")
+                end
+                return last.result, last.matchedId, last.rawResult, last.sideEffect
             end
         end
-    end
-    if throttledResult ~= nil then
-        if self.logger and self.logger.d then
-            self.logger.d("Skipping processing within throttle window")
-        end
-        return throttledResult
     end
     local context = {
         logger = self.logger,
@@ -195,13 +192,17 @@ function obj:processClipboard(content)
         pdMapping = self.pdMapping or {},
         formatters = self.formatters,
     }
-    local result = self.registry:process(trimmed, context)
+    local result, matchedId, rawResult = self.registry:process(trimmed, context)
+    local sideEffect = context.__lastSideEffect
     self._lastProcessing = {
         fingerprint = trimmed,
         timestamp = now,
         result = result,
+        matchedId = matchedId,
+        rawResult = rawResult,
+        sideEffect = sideEffect,
     }
-    return result
+    return result, matchedId, rawResult, sideEffect
 end
 
 function obj:registerDetector(detector)
@@ -336,8 +337,16 @@ function obj:formatClipboardDirect()
         return false
     end
 
-    local formatted = self:processClipboard(clipboard)
-    if formatted and formatted ~= clipboard then
+    local formatted, _, _, sideEffect = self:processClipboard(clipboard)
+    if sideEffect then
+        if type(hs) == "table" and hs.alert then
+            local message = sideEffect.message or "Action executed"
+            hs.alert.show(message)
+        end
+        return true
+    end
+
+    if type(formatted) == "string" and formatted ~= clipboard then
         clipboardIO.setPrimaryPasteboard(formatted)
         if type(hs) == "table" and hs.alert then
             hs.alert.show("Formatted clipboard")
