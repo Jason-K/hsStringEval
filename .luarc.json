@@ -1,0 +1,9 @@
+// /Users/jason/Scripts/Metascripts/hsStringEval/.luacheckrc
+{
+  "runtime.version": "LuaJIT",
+  "workspace.library": [
+    "${env:HOME}/.hammerspoon/Spoons/EmmyLua.spoon/annotations"
+  ],
+  "diagnostics.globals": ["hs", "spoon", "reloadConfig"],
+  "workspace.ignoreDir": [".vscode", "**/.hammerspoon/examples/**"]
+}

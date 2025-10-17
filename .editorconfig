@@ -1,0 +1,66 @@
+# /Users/jason/Scripts/Metascripts/hsStringEval/.editorconfig
+
+# EditorConfig is awesome: <https://editorconfig.org>
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# General defaults
+indent_style = space
+indent_size = 4
+
+# Markdown: don't strip trailing spaces (useful for tables / line breaks)
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# JSON/JSONC (settings files, configs)
+[*.{json,jsonc}]
+indent_size = 2
+
+# Python
+[*.py]
+indent_size = 4
+
+# AppleScript / JXA
+[*.{scpt,applescript,jxa}]
+indent_size = 2
+
+# YAML (workflows, etc.)
+[*.y{a,}ml]
+indent_size = 2
+
+# TOML (pyproject)
+[*.toml]
+indent_size = 2
+
+[*.lua]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+
+# (keep your preferred Emmy options, but avoid reintroducing tabs/auto EOL)
+max_line_length = 120
+table_separator_style = none
+trailing_table_separator = keep
+call_arg_parentheses = keep
+space_around_math_operator = true
+space_after_comma = true
+space_around_concat_operator = true
+space_around_logical_operator = true
+space_around_assign_operator = true
+align_call_args = true
+align_function_params = true
+align_continuous_assign_statement = true
+align_continuous_rect_table_field = true
+align_array_table = true
+align_continuous_inline_comment = true
+line_space_after_function_statement = fixed(2)
+line_space_around_block = fixed(1)
+break_all_list_when_line_exceed = false
+auto_collapse_lines = false
+break_before_braces = false
