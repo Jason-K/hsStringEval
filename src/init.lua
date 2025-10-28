@@ -249,6 +249,9 @@ local helperHotkeys = {
         return self:formatClipboardDirect()
     end,
     FormatSelected = function(self)
+        if self.logger and self.logger.d then
+            self.logger.d("FormatSelected wrapper called")
+        end
         return self:formatSelection()
     end,
 }
@@ -361,21 +364,25 @@ function obj:formatClipboardDirect()
 end
 
 function obj:formatSelection()
+    if self.logger and self.logger.d then
+        self.logger.d("formatSelection method called")
+    end
     local outcome = selection.apply(function(text)
-        return self:processClipboard(text)
-    end, {
-        logger = self.logger,
-        config = {
-            waitAfterClearMs = self.config.selection.waitAfterClearMs,
-            modifierCheckInterval = self.config.selection.modifierCheckInterval,
-            copyDelayMs = self.config.selection.copyDelayMs,
-            pasteDelayMs = self.config.selection.pasteDelayMs,
-            pollIntervalMs = self.config.selection.pollIntervalMs,
-            maxPolls = self.config.selection.maxPolls,
-            retryWithEventtap = self.config.selection.retryWithEventtap,
-        },
-        restoreOriginal = self.config.restoreClipboard,
-    })
+                                        return self:processClipboard(text)
+                                    end, {
+                                        logger = self.logger,
+                                        config = {
+                                            debug = (self.config.selection and self.config.selection.debug) or false,
+                                            waitAfterClearMs = self.config.selection.waitAfterClearMs,
+                                            modifierCheckInterval = self.config.selection.modifierCheckInterval,
+                                            copyDelayMs = self.config.selection.copyDelayMs,
+                                            pasteDelayMs = self.config.selection.pasteDelayMs,
+                                            pollIntervalMs = self.config.selection.pollIntervalMs,
+                                            maxPolls = self.config.selection.maxPolls,
+                                            retryWithEventtap = self.config.selection.retryWithEventtap,
+                                        },
+                                        restoreOriginal = self.config.restoreClipboard,
+                                    })
 
     if outcome.success then
         if type(hs) == "table" and hs.alert then
