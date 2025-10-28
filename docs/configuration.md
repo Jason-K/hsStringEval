@@ -29,15 +29,24 @@ called. This document explains the available knobs and how to override them.
 
 All values are expressed in milliseconds unless noted.
 
+Behavior:
+
+- **Method 1**: Tries accessibility API to read selected text directly (no clipboard interference)
+- **Method 2**: Uses Edit > Copy via the frontmost app menu when available; falls back to Cmd+C when not
+- **Method 3**: If still unsuccessful, final Cmd+C with longer delay for slow apps
+- Briefly polls the clipboard for a change; if unchanged, waits `copyDelayMs` then proceeds
+- Pastes via Edit > Paste with a keystroke fallback
+
 | Option | Description |
 | ------ | ----------- |
-| `waitAfterClearMs` | Delay after clearing the clipboard before copying the selection. |
-| `modifierCheckInterval` | Poll interval used while waiting for the user to release modifier keys. |
-| `copyDelayMs` | Delay after issuing the copy command before checking the clipboard. |
-| `pasteDelayMs` | Delay before running the paste command and (optionally) before restoring the clipboard. |
-| `pollIntervalMs` | Interval between clipboard polls while waiting for copied content. |
-| `maxPolls` | Maximum number of polls before aborting the operation. |
-| `retryWithEventtap` | When `true`, fall back to `hs.eventtap` for copy events if AppleScript fails. |
+| `debug` | When `true`, emit selection debug logs. Default `false`. |
+| `tryAccessibilityAPI` | When `true` (default), attempt accessibility API first (fastest, no clipboard). |
+| `copySelection` | When `true` (default), perform the copy step before formatting. |
+| `copyDelayMs` | Fallback delay after copy if polling didn't detect a change (default `300`). |
+| `copyWaitTimeoutMs` | Maximum time to poll for clipboard change after copy (default `600`). |
+| `fallbackKeystroke` | When `true` (default), enable final Cmd+C with longer delay for slow apps. |
+| `fallbackDelayMs` | Microseconds delay for final keystroke attempt (default `20000` = 20ms). |
+| `pasteDelayMs` | Delay before paste and (if restoring) before restoring the original clipboard (default `60`). |
 
 ## Permanent Disability (PD) Mapping (`config.pd`)
 

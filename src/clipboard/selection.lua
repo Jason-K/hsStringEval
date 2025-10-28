@@ -6,6 +6,19 @@ local strings = require(utilsRoot .. ".utils.strings")
 
 local Selection = {}
 
+-- Try to get selected text via accessibility API
+local function tryAccessibilityAPI(dprint)
+    local uielement = require("hs.uielement")
+    local elem = uielement.focusedElement()
+    if elem and elem.selectedText then
+        local text = elem:selectedText()
+        if text and text ~= "" then
+            dprint("DEBUG: Got text via accessibility API")
+            return text
+        end
+    end
+    return nil
+end
 function Selection.apply(formatter, opts)
     -- Debug helper
     local noop = function() end
@@ -20,13 +33,24 @@ function Selection.apply(formatter, opts)
     dprint("DEBUG: Selection.apply called")
     local logger = opts.logger
 
-    -- Get current clipboard - it should already have the selection
+    -- Get current clipboard
     local originalClipboard = clipboardIO.getPrimaryPasteboard()
     dprint("DEBUG: Clipboard at start:", originalClipboard)
 
-    -- If selection mode is enabled, copy the selection.
-    -- Use menu-based copy to avoid interference from held modifiers (e.g., vmod).
-    if selectionCfg.copySelection ~= false then
+    local selectedText = nil
+    local hasSelection = false
+
+    -- Method 1: Try accessibility API first (fastest, no clipboard interference)
+    if selectionCfg.tryAccessibilityAPI ~= false then
+        selectedText = tryAccessibilityAPI(dprint)
+        if selectedText and selectedText ~= "" then
+            hasSelection = true
+            dprint("DEBUG: Selection captured via accessibility API")
+        end
+    end
+
+    -- Method 2: Menu-based copy with polling (if accessibility failed)
+    if not hasSelection and selectionCfg.copySelection ~= false then
         local app = require("hs.application").frontmostApplication()
         local eventtap = require("hs.eventtap")
         local timer = require("hs.timer")
@@ -49,21 +73,35 @@ function Selection.apply(formatter, opts)
             local now = clipboardIO.getPrimaryPasteboard()
             if now and now ~= originalClipboard and now ~= "" then
                 changed = true
+                selectedText = now
                 break
             end
             timer.usleep(stepMs * 1000)
         end
+
         if not changed then
             local delayMs = selectionCfg.copyDelayMs or 300
             dprint("DEBUG: Clipboard unchanged after poll; waiting", delayMs, "ms")
             timer.usleep(delayMs * 1000)
+            selectedText = clipboardIO.getPrimaryPasteboard()
+            changed = selectedText ~= originalClipboard and selectedText ~= nil
         end
+        -- Method 3: Final keystroke fallback with longer delay (for slow apps)
+        if not changed and selectionCfg.fallbackKeystroke ~= false then
+            local fallbackDelayMs = selectionCfg.fallbackDelayMs or 20000 -- microseconds (20ms)
+            dprint("DEBUG: Trying fallback keystroke with longer delay")
+            eventtap.keyStroke({ "cmd" }, "c", 0)
+            timer.usleep(fallbackDelayMs)
+            selectedText = clipboardIO.getPrimaryPasteboard()
+            changed = selectedText ~= originalClipboard and selectedText ~= nil
+        end
+
+        hasSelection = changed
     end
 
     -- Get the selection
-    local selectedText = clipboardIO.getPrimaryPasteboard()
     dprint("DEBUG: Clipboard after copy:", selectedText)
-    local hasSelection = selectedText and selectedText ~= originalClipboard and selectedText ~= ""
+    hasSelection = (hasSelection and selectedText and selectedText ~= originalClipboard and selectedText ~= "") == true
     dprint("DEBUG: Has selection:", hasSelection)
 
     if not hasSelection then
