@@ -127,11 +127,22 @@ requests, ensuring consistency with the local development workflow.
    local ClipboardFormatter = hs.loadSpoon("ClipboardFormatter")
    ClipboardFormatter:bindHotkeys({
        format = { { "ctrl", "alt" }, "f" },
+       formatSeed = { { "ctrl", "alt" }, "d" },
        formatSelection = { { "ctrl", "alt" }, "s" },
    })
    ```
 
    Adjust the hotkeys and configuration paths as needed.
+
+### Formatting Modes
+
+ClipboardFormatter provides three formatting methods:
+
+- **`format`**: Processes the entire clipboard content and replaces it with the formatted result.
+- **`formatSeed`**: Extracts the last expression from the clipboard (after `=`, `:`, or the last whitespace), processes only that expression, and returns the prefix + formatted result. Useful when combined with Karabiner rules that cut the entire line preceding the caret.
+- **`formatSelection`**: Formats the currently selected text in the active application.
+
+Example use case for `formatSeed`: If your Karabiner rule cuts "let result = 5 + 3", the formatter extracts "5 + 3", evaluates it to "8", and pastes back "let result = 8".
 
 ## Contributing
 

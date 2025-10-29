@@ -115,9 +115,10 @@ function Selection.apply(formatter, opts)
         }
     end
 
-    local trimmed = strings.trim(selectedText)
-    dprint("DEBUG: Selected text:", trimmed)
-    local ok, formatted = pcall(formatter, trimmed)
+    -- Preserve exact selection; do not trim so leading tabs/newlines survive
+    local rawSelected = selectedText
+    dprint("DEBUG: Selected text (raw):", rawSelected)
+    local ok, formatted, sideEffect = pcall(formatter, rawSelected)
     if not ok then
         dprint("DEBUG: Formatter error:", formatted)
         if opts.restoreOriginal ~= false then
@@ -131,8 +132,9 @@ function Selection.apply(formatter, opts)
         }
     end
     dprint("DEBUG: Formatted result:", formatted)
-    dprint("DEBUG: Same as original?", formatted == trimmed)
-    if not formatted or formatted == trimmed then
+    dprint("DEBUG: Same as original?", formatted == rawSelected)
+    dprint("DEBUG: Side effect:", sideEffect)
+    if not formatted or (formatted == rawSelected and not sideEffect) then
         if opts.restoreOriginal ~= false then
             restore.to(originalClipboard)
         end
@@ -169,6 +171,7 @@ function Selection.apply(formatter, opts)
         success = true,
         formatted = formatted,
         original = originalClipboard,
+        sideEffectMessage = sideEffect and sideEffect.message,
     }
 end
 

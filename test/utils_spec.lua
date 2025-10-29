@@ -41,6 +41,25 @@ describe("utils modules", function()
         assert.is_false(strings.startsWith("bar", "foo"))
         assert.is_true(strings.equalFold("Foo", "foo"))
         assert.equal("1-2-3", strings.normalizeMinus("1−2—3"))
+        local prefix, seed = strings.extractSeed("let x = 5 + 3")
+        assert.equal("let x = ", prefix)
+        assert.equal("5 + 3", seed)
+
+        local p2, s2 = strings.extractSeed("result:\t10*2")
+        assert.equal("result:\t", p2)
+        assert.equal("10*2", s2)
+
+        local p3, s3 = strings.extractSeed("line1\n15/3")
+        assert.equal("line1\n", p3)
+        assert.equal("15/3", s3)
+
+        local p4, s4 = strings.extractSeed("no-whitespace")
+        assert.equal("", p4)
+        assert.equal("no-whitespace", s4)
+
+        local p5, s5 = strings.extractSeed("")
+        assert.equal("", p5)
+        assert.equal("", s5)
     end)
 
     it("exposes compiled pattern helpers", function()

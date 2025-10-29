@@ -248,6 +248,23 @@ local helperHotkeys = {
     FormatClip = function(self)
         return self:formatClipboardDirect()
     end,
+    FormatClipSeed = function(self)
+        return self:formatClipboardSeed()
+    end,
+    -- Selects to beginning of line, cuts, evaluates the seed at the end of the
+    -- selection, pastes the result, and restores the original clipboard.
+    -- Useful when calling from Karabiner so timing is handled inside Hammerspoon.
+    FormatCutSeed = function(self)
+        -- Select to beginning of line, then run the robust selection-based flow
+        if type(hs) == "table" and hs.eventtap then
+            hs.eventtap.keyStroke({ "cmd", "shift" }, "left", 0)
+            hs.timer.doAfter(0.03, function()
+                self:formatSelectionSeed()
+            end)
+            return true
+        end
+        return self:formatSelectionSeed()
+    end,
     FormatSelected = function(self)
         if self.logger and self.logger.d then
             self.logger.d("FormatSelected wrapper called")
@@ -363,12 +380,236 @@ function obj:formatClipboardDirect()
     return false
 end
 
+function obj:formatClipboardSeed(opts)
+    opts = opts or {}
+    local clipboard = self:getClipboardContent()
+    if not clipboard or clipboard == "" then
+        if type(hs) == "table" and hs.alert then
+            hs.alert.show("Clipboard empty")
+        end
+        return false
+    end
+
+    local prefix, seed = strings.extractSeed(clipboard)
+    if seed == "" then
+        if type(hs) == "table" and hs.alert then
+            hs.alert.show("No seed found in clipboard")
+        end
+        return false
+    end
+
+    if self.logger and self.logger.d then
+        self.logger.d("formatClipboardSeed - prefix: [" .. prefix .. "] seed: [" .. seed .. "]")
+    end
+
+    local formatted, _, _, sideEffect = self:processClipboard(seed)
+
+    if self.logger and self.logger.d then
+        self.logger.d("formatClipboardSeed - formatted: [" ..
+            tostring(formatted) .. "] sideEffect: " .. tostring(sideEffect ~= nil))
+    end
+
+    if sideEffect then
+        clipboardIO.setPrimaryPasteboard(clipboard)
+        if type(hs) == "table" and hs.alert then
+            local message = sideEffect.message or "Action executed"
+            hs.alert.show(message)
+        end
+        return true
+    end
+
+    if type(formatted) == "string" and formatted ~= seed then
+        local result = prefix .. formatted
+        if self.logger and self.logger.d then
+            self.logger.d("formatClipboardSeed - setting clipboard to: [" .. result .. "]")
+        end
+        clipboardIO.setPrimaryPasteboard(result)
+        if opts.autoPaste and type(hs) == "table" and hs.eventtap and hs.eventtap.keyStroke then
+            hs.timer.doAfter(0.05, function()
+                hs.eventtap.keyStroke({ "cmd" }, "v")
+            end)
+        end
+        if type(hs) == "table" and hs.alert then
+            hs.alert.show("Formatted clipboard")
+        end
+        return true
+    end
+
+    if type(hs) == "table" and hs.alert then
+        hs.alert.show("No formattable content in clipboard")
+    end
+    return false
+end
+
+-- Performs the entire flow inside Hammerspoon:
+-- 1) Select to beginning of the line (Cmd+Shift+Left)
+-- 2) Cut (Cmd+X) and wait for clipboard to change
+-- 3) Evaluate only the seed at the end of the selection
+-- 4) Paste back result (or original text for side effects) and optionally restore clipboard
+function obj:cutLineAndFormatSeed(opts)
+    opts = opts or {}
+    if type(hs) ~= "table" or not hs.eventtap then
+        if self.logger and self.logger.w then
+            self.logger.w("cutLineAndFormatSeed requires hs.eventtap")
+        end
+        return false
+    end
+
+    local pasteCfg = self.config and self.config.selection or {}
+    local pasteDelayMs = tonumber(pasteCfg.pasteDelayMs) or 60
+    local pollIntervalMs = tonumber(pasteCfg.pollIntervalMs) or 50
+    local maxPolls = tonumber(pasteCfg.maxPolls) or 8
+    local copyDelayMs = tonumber(pasteCfg.copyDelayMs) or 300
+    local copyWaitTimeoutMs = tonumber(pasteCfg.copyWaitTimeoutMs) or 0
+
+    -- Ensure the frontmost window is focused to receive keystrokes
+    if hsUtils and hsUtils.focusFrontmostWindow then
+        hsUtils.focusFrontmostWindow(self.logger)
+    end
+
+    local originalClipboard = clipboardIO.getPrimaryPasteboard() or ""
+
+    -- Select to beginning of line and cut
+    hs.eventtap.keyStroke({ "cmd", "shift" }, "left", 0)
+    hs.eventtap.keyStroke({ "cmd" }, "x", 0)
+
+    -- Wait for clipboard to change to the cut text.
+    -- We adaptively extend the wait window if the app is slow to update.
+    local cutText
+    local totalWaitMs = math.max(copyWaitTimeoutMs, pollIntervalMs * maxPolls)
+    totalWaitMs = math.max(totalWaitMs, copyDelayMs)
+    -- Ensure at least 600ms total window for slow apps
+    if totalWaitMs < 600 then totalWaitMs = 600 end
+
+    local remainingMs = totalWaitMs
+    if hsUtils and hsUtils.waitForClipboardChange then
+        -- First attempt using the helper with an expanded number of polls
+        local expandedPolls = math.max(maxPolls, math.floor(totalWaitMs / pollIntervalMs + 0.5))
+        cutText = hsUtils.waitForClipboardChange(originalClipboard, {
+            pollIntervalMs = pollIntervalMs,
+            maxPolls = expandedPolls,
+        })
+        remainingMs = totalWaitMs - (expandedPolls * pollIntervalMs)
+    end
+
+    -- If still unchanged, do a short sleep and check directly in a loop
+    if type(cutText) ~= "string" or cutText == "" then
+        if hsUtils and hsUtils.sleep then
+            hsUtils.sleep(math.min(copyDelayMs, 200))
+            remainingMs = remainingMs - math.min(copyDelayMs, 200)
+        end
+        local deadline = os.clock() * 1000 + math.max(remainingMs, 0)
+        while (type(cutText) ~= "string" or cutText == "" or cutText == originalClipboard) and (os.clock() * 1000) < deadline do
+            local current = clipboardIO.getPrimaryPasteboard()
+            if type(current) == "string" and current ~= "" and current ~= originalClipboard then
+                cutText = current
+                break
+            end
+            if hsUtils and hsUtils.sleep then hsUtils.sleep(math.min(pollIntervalMs, 50)) end
+        end
+    end
+    if type(cutText) ~= "string" or cutText == "" then
+        -- Fallback: read whatever is currently there
+        cutText = clipboardIO.getPrimaryPasteboard()
+    end
+
+    if type(cutText) ~= "string" or cutText == "" then
+        if type(hs) == "table" and hs.alert then
+            hs.alert.show("Clipboard not updated after cut")
+        end
+        -- Nothing cut; bail
+        return false
+    end
+
+    -- Extract seed from the cut text
+    local prefix, seed = strings.extractSeed(cutText)
+    if self.logger and self.logger.d then
+        self.logger.d("cutLineAndFormatSeed - prefix: [" .. prefix .. "] seed: [" .. seed .. "]")
+    end
+    if seed == "" then
+        -- Paste back original cut text to avoid data loss
+        clipboardIO.setPrimaryPasteboard(cutText)
+        hs.timer.doAfter(pasteDelayMs / 1000, function()
+            hs.eventtap.keyStroke({ "cmd" }, "v")
+            if self.config and self.config.restoreClipboard then
+                hs.timer.doAfter(pasteDelayMs / 1000, function()
+                    clipboardIO.setPrimaryPasteboard(originalClipboard)
+                end)
+            end
+        end)
+        if type(hs) == "table" and hs.alert then
+            hs.alert.show("No seed found in clipboard")
+        end
+        return false
+    end
+
+    -- Process just the seed
+    local formatted, _, _, sideEffect = self:processClipboard(seed)
+    if self.logger and self.logger.d then
+        self.logger.d("cutLineAndFormatSeed - formatted: [" ..
+            tostring(formatted) .. "] sideEffect: " .. tostring(sideEffect ~= nil))
+    end
+
+    if sideEffect then
+        -- Paste back the original cut text, then restore clipboard
+        clipboardIO.setPrimaryPasteboard(cutText)
+        hs.timer.doAfter(pasteDelayMs / 1000, function()
+            hs.eventtap.keyStroke({ "cmd" }, "v")
+            if self.config and self.config.restoreClipboard then
+                hs.timer.doAfter(pasteDelayMs / 1000, function()
+                    clipboardIO.setPrimaryPasteboard(originalClipboard)
+                end)
+            end
+        end)
+        if type(hs) == "table" and hs.alert then
+            local message = sideEffect.message or "Action executed"
+            hs.alert.show(message)
+        end
+        return true
+    end
+
+    if type(formatted) == "string" and formatted ~= seed then
+        local result = prefix .. formatted
+        if self.logger and self.logger.d then
+            self.logger.d("cutLineAndFormatSeed - paste: [" .. result .. "]")
+        end
+        clipboardIO.setPrimaryPasteboard(result)
+        hs.timer.doAfter(pasteDelayMs / 1000, function()
+            hs.eventtap.keyStroke({ "cmd" }, "v")
+            if self.config and self.config.restoreClipboard then
+                hs.timer.doAfter(pasteDelayMs / 1000, function()
+                    clipboardIO.setPrimaryPasteboard(originalClipboard)
+                end)
+            end
+        end)
+        if type(hs) == "table" and hs.alert then
+            hs.alert.show("Formatted selection")
+        end
+        return true
+    end
+
+    -- No change: paste back original cut text
+    clipboardIO.setPrimaryPasteboard(cutText)
+    hs.timer.doAfter(pasteDelayMs / 1000, function()
+        hs.eventtap.keyStroke({ "cmd" }, "v")
+        if self.config and self.config.restoreClipboard then
+            hs.timer.doAfter(pasteDelayMs / 1000, function()
+                clipboardIO.setPrimaryPasteboard(originalClipboard)
+            end)
+        end
+    end)
+    if type(hs) == "table" and hs.alert then
+        hs.alert.show("No formatting needed")
+    end
+    return false
+end
 function obj:formatSelection()
     if self.logger and self.logger.d then
         self.logger.d("formatSelection method called")
     end
     local outcome = selection.apply(function(text)
-                                        return self:processClipboard(text)
+                                        local formatted, _, _, sideEffect = self:processClipboard(text)
+                                        return formatted, sideEffect
                                     end, {
                                         logger = self.logger,
                                         config = {
@@ -386,7 +627,65 @@ function obj:formatSelection()
 
     if outcome.success then
         if type(hs) == "table" and hs.alert then
-            hs.alert.show("Formatted selection")
+            local message = outcome.sideEffectMessage or "Formatted selection"
+            hs.alert.show(message)
+        end
+        return true
+    end
+
+    if type(hs) == "table" and hs.alert then
+        local reason = outcome.reason == "no_selection" and "Could not get selected text" or "No formatting needed"
+        hs.alert.show(reason)
+    end
+
+    return false
+end
+
+-- Formats only the seed at the end of the selected text and pastes back
+-- prefix + formattedResult. Side effects preserve the original selection.
+function obj:formatSelectionSeed()
+    if self.logger and self.logger.d then
+        self.logger.d("formatSelectionSeed method called")
+    end
+    local outcome = selection.apply(function(text)
+                                        -- Preserve leading and trailing whitespace (tabs/newlines)
+                                        local leading_ws = text:match("^(%s*)") or ""
+                                        local trailing_ws = text:match("(%s*)$") or ""
+                                        local body = text:sub(1, #text - #trailing_ws)
+                                        local prefix, seed = strings.extractSeed(body)
+                                        local formatted, _, _, sideEffect = self:processClipboard(seed)
+                                        if sideEffect then
+                                            -- Preserve original selection; signal side effect
+                                            return text, sideEffect
+                                        end
+                                        if type(formatted) == "string" and formatted ~= seed then
+                                            -- If prefix is only whitespace, preserve it
+                                            if prefix:match("^%s*$") then
+                                                return leading_ws .. formatted .. trailing_ws
+                                            else
+                                                return prefix .. formatted .. trailing_ws
+                                            end
+                                        end
+                                        return text
+                                    end, {
+                                        logger = self.logger,
+                                        config = {
+                                            debug = (self.config.selection and self.config.selection.debug) or false,
+                                            waitAfterClearMs = self.config.selection.waitAfterClearMs,
+                                            modifierCheckInterval = self.config.selection.modifierCheckInterval,
+                                            copyDelayMs = self.config.selection.copyDelayMs,
+                                            pasteDelayMs = self.config.selection.pasteDelayMs,
+                                            pollIntervalMs = self.config.selection.pollIntervalMs,
+                                            maxPolls = self.config.selection.maxPolls,
+                                            retryWithEventtap = self.config.selection.retryWithEventtap,
+                                        },
+                                        restoreOriginal = self.config.restoreClipboard,
+                                    })
+
+    if outcome.success then
+        if type(hs) == "table" and hs.alert then
+            local message = outcome.sideEffectMessage or "Formatted selection"
+            hs.alert.show(message)
         end
         return true
     end
@@ -402,6 +701,9 @@ end
 function obj:bindHotkeys(mapping)
     local spec = {
         format = hs.fnutils.partial(self.formatClipboardDirect, self),
+        -- New binding for seed-on-selection formatting
+        formatSelectionSeed = hs.fnutils.partial(self.formatSelectionSeed, self),
+        formatSeed = hs.fnutils.partial(self.formatClipboardSeed, self),
         formatSelection = hs.fnutils.partial(self.formatSelection, self),
     }
     hs.spoons.bindHotkeysToSpec(spec, mapping)
