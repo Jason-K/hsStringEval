@@ -1,5 +1,18 @@
+--[[
+  Provides a flexible logging utility that can direct messages to the Hammerspoon
+  console, a log file, or both, with support for structured JSON output.
+
+  This module is designed to be a robust replacement for `hs.logger`, offering
+  more control over log levels for different outputs (sinks) and allowing for
+  dynamic configuration of logging behavior at runtime. It includes features
+  like log level normalization, structured logging, and fallback mechanisms for
+  environments where Hammerspoon's native utilities are not available.
+--]]
 local M = {}
 
+-- Defines the numerical hierarchy of log levels.
+-- This table maps log level names to integer values, allowing for easy
+-- comparison to determine if a message of a certain level should be logged.
 local LEVEL_ORDER = {
     debug = 10,
     info = 20,
@@ -8,6 +21,9 @@ local LEVEL_ORDER = {
     fault = 50,
 }
 
+-- Provides a mapping from common aliases to normalized log level names.
+-- This allows for flexibility in specifying log levels, accommodating both
+-- full names and common abbreviations (e.g., "warn" for "warning").
 local LEVEL_ALIASES = {
     d = "debug",
     debug = "debug",
@@ -22,6 +38,17 @@ local LEVEL_ALIASES = {
     fault = "fault",
 }
 
+--[[
+  Normalizes a log level string to its canonical name.
+
+  Given a string, this function attempts to convert it into a standardized log
+  level name (e.g., "warn" becomes "warning"). It performs a case-insensitive
+  lookup in the `LEVEL_ALIASES` table.
+
+  @param level (string) The log level string to normalize.
+  @return (string|nil) The normalized log level name, or `nil` if the input is
+                      not a string or cannot be normalized.
+--]]
 local function normalizeLevel(level)
     if type(level) ~= "string" then
         return nil
@@ -29,6 +56,17 @@ local function normalizeLevel(level)
     return LEVEL_ALIASES[level:lower()]
 end
 
+--[[
+  Determines whether a log message should be written based on the current threshold.
+
+  This function compares the numerical value of a message's log level against a
+  specified threshold. It returns `true` if the message's level is at or above
+  the threshold, indicating that it should be logged.
+
+  @param level (string) The normalized log level of the message.
+  @param threshold (string) The normalized log level threshold.
+  @return (boolean) `true` if the message should be written, `false` otherwise.
+--]]
 local function shouldWrite(level, threshold)
     if not level or not threshold then
         return false
@@ -36,10 +74,29 @@ local function shouldWrite(level, threshold)
     return (LEVEL_ORDER[level] or 0) >= (LEVEL_ORDER[threshold] or math.huge)
 end
 
+--[[
+  Escapes characters in a string to ensure it is a valid JSON string value.
+
+  This function takes a string and escapes backslashes, double quotes, carriage
+  returns, and newlines, which is essential for embedding the string within a
+  JSON structure.
+
+  @param str (string) The string to escape.
+  @return (string) The JSON-escaped string.
+--]]
 local function jsonEscape(str)
     return (str or ""):gsub("\\", "\\\\"):gsub("\"", "\\\""):gsub("\r", "\\r"):gsub("\n", "\\n")
 end
 
+--[[
+  Formats a log entry as a single-line JSON object.
+
+  Constructs a JSON string from a payload table containing log details such as
+  timestamp, level, and message. This is used for structured logging output.
+
+  @param payload (table) A table with `timestamp`, `level`, and `message` keys.
+  @return (string) A JSON-formatted string representing the log entry.
+--]]
 local function structuredLine(payload)
     local parts = {}
     if payload.timestamp then
@@ -50,6 +107,13 @@ local function structuredLine(payload)
     return "{" .. table.concat(parts, ",") .. "}"
 end
 
+--[[
+  Trims leading and trailing whitespace from a string.
+
+  @param value (string) The string to trim.
+  @return (string|nil) The trimmed string, or `nil` if the input is not a string
+                      or if the result is empty.
+--]]
 local function trim(value)
     if type(value) ~= "string" then
         return nil
@@ -61,6 +125,17 @@ local function trim(value)
     return trimmed
 end
 
+--[[
+  Recursively resolves a log level from various possible input types.
+
+  This function is designed to robustly determine a log level from numbers,
+  strings, or tables. It can handle nested tables and various keys to find a
+  valid log level value.
+
+  @param value (any) The value to resolve into a log level.
+  @return (string|number|nil) The resolved log level, which could be a normalized
+                              string or a number, or `nil` if resolution fails.
+--]]
 local function resolveLogLevelValue(value)
     if type(value) == "number" then
         return value
@@ -88,6 +163,18 @@ local function resolveLogLevelValue(value)
     return nil
 end
 
+--[[
+  Applies a log level to a sink, with an optional fallback level.
+
+  This function attempts to set the log level on a given sink object (e.g., an
+  `hs.logger` instance). If setting the primary level fails or is not provided,
+  it tries again with the fallback level.
+
+  @param sink (table) The logging sink object, which must have a `setLogLevel` method.
+  @param level (any) The desired log level to apply.
+  @param fallback (any) The fallback log level to apply if the primary one fails.
+  @return (any|nil) The log level that was successfully applied, or `nil`.
+--]]
 local function applySinkLogLevel(sink, level, fallback)
     if not sink or type(sink.setLogLevel) ~= "function" then
         return nil
@@ -110,6 +197,16 @@ local function applySinkLogLevel(sink, level, fallback)
     end
     return nil
 end
+--[[
+  Builds a fallback logger for environments without `hs.logger`.
+
+  When `hs.logger` is not available, this function creates a simple logger-like
+  table that captures log messages in memory. This is useful for testing or
+  running in non-Hammerspoon environments.
+
+  @param level (string) The initial log level for the fallback logger.
+  @return (table) A fallback logger object with standard logging methods.
+--]]
 local function buildFallback(level)
     local logger = {
         level = level or "warning",
@@ -134,6 +231,17 @@ local function buildFallback(level)
     return logger
 end
 
+--[[
+  Formats a log message, similar to `string.format` but with fallbacks.
+
+  If the first argument is a format string and subsequent arguments are provided,
+  it attempts to use `string.format`. If that fails or is not applicable, it
+  concatenates all arguments into a single space-separated string.
+
+  @param fmt (any) The format string or the first value to be logged.
+  @param ... (any) Additional values to format or concatenate.
+  @return (string) The formatted log message.
+--]]
 local function formatMessage(fmt, ...)
     if fmt == nil then
         return ""
@@ -155,6 +263,15 @@ local function formatMessage(fmt, ...)
     return table.concat(parts, " ")
 end
 
+--[[
+  Ensures that the directory for a given file path exists.
+
+  If the environment provides `hs.fs`, this function will check for the
+  existence of the parent directory of the specified path and create it if it
+  does not exist.
+
+  @param path (string) The full file path.
+--]]
 local function ensureDirectory(path)
     if type(path) ~= "string" or path == "" then
         return
@@ -172,6 +289,16 @@ local function ensureDirectory(path)
     end
 end
 
+--[[
+  Appends a formatted log line to a file.
+
+  Opens the specified file in append mode and writes a log message, prefixed
+  with a timestamp and the log level.
+
+  @param path (string) The path to the log file.
+  @param level (string) The log level of the message.
+  @param message (string) The log message to write.
+--]]
 local function appendLine(path, level, message)
     if not path or path == "" or not message or message == "" then
         return
@@ -184,6 +311,23 @@ local function appendLine(path, level, message)
     file:close()
 end
 
+--[[
+  Creates and configures a new logger instance.
+
+  This is the main constructor for the logger. It sets up the console and file
+  sinks based on the provided options, and returns a logger object with methods
+  for logging at different levels (`d`, `i`, `w`, `e`, `f`).
+
+  @param name (string) The name of the logger, used by `hs.logger`.
+  @param level (string) The default log level for all sinks.
+  @param opts (table, optional) A table of options to configure the logger:
+    - `consoleLevel` (string): The log level for the console sink.
+    - `fileLevel` (string): The log level for the file sink.
+    - `logFile` (string|boolean): The path to the log file. `false` disables file logging.
+    - `structured` (boolean): If `true`, console output will be in JSON format.
+    - `includeTimestamp` (boolean): If `false`, timestamps are omitted from structured logs.
+  @return (table) The new logger instance.
+--]]
 function M.new(name, level, opts)
     opts = opts or {}
     local defaultConsoleLevel = resolveLogLevelValue("warning") or "warning"
@@ -221,6 +365,17 @@ function M.new(name, level, opts)
         messages = sink.messages,
     }
 
+    --[[
+      Internal function to emit a log message to the configured sinks.
+
+      This function formats the message, checks if it meets the file log level
+      threshold, and then sends it to the appropriate sink (file and/or console).
+      It handles both plain and structured logging formats.
+
+      @param method (string) The short name of the sink method to call (e.g., "d", "i").
+      @param severity (string) The normalized severity level of the message.
+      @param ... (any) The arguments for the log message, to be formatted.
+    --]]
     local function emit(method, severity, ...)
         local message = formatMessage(...)
         if message == "" then
@@ -248,22 +403,52 @@ function M.new(name, level, opts)
         end
     end
 
+    --[[
+      Logs a message at the 'debug' level.
+      @param fmt (string) The format string.
+      @param ... (any) Values to be formatted.
+    --]]
     logger.d = function(fmt, ...)
         emit("d", "debug", fmt, ...)
     end
+    --[[
+      Logs a message at the 'info' level.
+      @param fmt (string) The format string.
+      @param ... (any) Values to be formatted.
+    --]]
     logger.i = function(fmt, ...)
         emit("i", "info", fmt, ...)
     end
+    --[[
+      Logs a message at the 'warning' level.
+      @param fmt (string) The format string.
+      @param ... (any) Values to be formatted.
+    --]]
     logger.w = function(fmt, ...)
         emit("w", "warning", fmt, ...)
     end
+    --[[
+      Logs a message at the 'error' level.
+      @param fmt (string) The format string.
+      @param ... (any) Values to be formatted.
+    --]]
     logger.e = function(fmt, ...)
         emit("e", "error", fmt, ...)
     end
+    --[[
+      Logs a message at the 'fault' level.
+      @param fmt (string) The format string.
+      @param ... (any) Values to be formatted.
+    --]]
     logger.f = function(fmt, ...)
         emit("f", "fault", fmt, ...)
     end
 
+    --[[
+      Sets the log level for the console sink at runtime.
+      @param _ (table) The logger instance (self).
+      @param newLevel (string) The new log level to set.
+    --]]
     logger.setLogLevel = function(_, newLevel)
         local resolved = resolveLogLevelValue(newLevel)
         if sink.setLogLevel then
@@ -271,10 +456,20 @@ function M.new(name, level, opts)
         end
     end
 
+    --[[
+      Sets the log level for the file sink at runtime.
+      @param _ (table) The logger instance (self).
+      @param newLevel (string) The new log level to set.
+    --]]
     logger.setFileLevel = function(_, newLevel)
         fileLevel = normalizeLevel(newLevel)
     end
 
+    --[[
+      Sets the path for the log file at runtime.
+      @param _ (table) The logger instance (self).
+      @param path (string|boolean) The new path for the log file, or `false` to disable.
+    --]]
     logger.setLogFile = function(_, path)
         if path == false then
             logFile = nil
