@@ -145,6 +145,12 @@ local function openKagiSearch(query, logger)
     return true, meta
 end
 
+local function looksLikeArithmetic(text)
+    if type(text) ~= "string" then return false end
+    local trimmed = strings.trim(text)
+    -- Check if it's a simple arithmetic expression (numbers and operators only)
+    return trimmed:match("^[%d%.%s%(%)%+%-%*/%%^]+$") ~= nil
+end
 return function(deps)
     local logger = deps and deps.logger
     return {
@@ -155,6 +161,14 @@ return function(deps)
                 context = {}
             end
             if context.__matches and #context.__matches > 0 then
+                return nil
+            end
+            -- Skip navigation if the text looks like an arithmetic expression
+            -- This prevents false matches when arithmetic detector fails for other reasons
+            if looksLikeArithmetic(text) then
+                if logger and logger.d then
+                    logger.d("Navigation skipping arithmetic-like text: " .. text)
+                end
                 return nil
             end
             local trimmed = strings.trim(text)

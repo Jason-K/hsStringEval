@@ -118,7 +118,24 @@ function M.extractSeed(str)
         return "", ""
     end
 
-    -- SETUP: Define common separators that precede an expression.
+    -- STRATEGY: Look for the last whitespace-separated token that could be an expression.
+    -- This is more reliable than looking for separators like '[' which can appear in labels.
+
+    -- First, try to find a simple arithmetic-like pattern at the end
+    -- Look for the last whitespace before an arithmetic expression
+    local beforeWs, ws, arith = str:match("^(.-)(%s+)([%d%.%(%)%+%-%*/%%^]+)$")
+    if arith and arith:match("[%d%(]") then
+        -- Found arithmetic at the end with leading whitespace - keep the space in prefix
+        return beforeWs .. ws, arith
+    end
+
+    -- Try without requiring leading whitespace (for strings that are just arithmetic)
+    local arithmeticOnly = str:match("^([%d%.%(%)%+%-%*/%%^]+)$")
+    if arithmeticOnly and arithmeticOnly:match("[%d%(]") then
+        return "", arithmeticOnly
+    end
+
+    -- Fallback: Look for common separators that precede an expression
     -- We look for these followed by whitespace to avoid matching parts of words.
     local separators = { "=%s", ":%s", "%(", "%[", "{" }
     local lastSepPos = 0
@@ -170,4 +187,5 @@ function M.extractSeed(str)
     -- CASE: No whitespace found, the entire string is the seed.
     return "", str
 end
+
 return M

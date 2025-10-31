@@ -258,7 +258,7 @@ local helperHotkeys = {
         -- Select to beginning of line, then run the robust selection-based flow
         if type(hs) == "table" and hs.eventtap then
             hs.eventtap.keyStroke({ "cmd", "shift" }, "left", 0)
-            hs.timer.doAfter(0.03, function()
+            hs.timer.doAfter(0.08, function()
                 self:formatSelectionSeed()
             end)
             return true
