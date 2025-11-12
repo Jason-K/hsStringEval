@@ -13,3 +13,6 @@ rockspec/*.src.rock
 # IDE metadata
 .vscode/
 .idea/
+
+.venv/
+env/
