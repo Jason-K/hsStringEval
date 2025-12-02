@@ -1,15 +1,13 @@
 local pkgRoot = (...):match("^(.*)%.detectors%.pd$")
+local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
 local defaultCurrency = require(pkgRoot .. ".formatters.currency")
 
 return function(deps)
-    local logger = deps and deps.logger
-    local benefitPerWeek = (deps and deps.config and deps.config.pd and deps.config.pd.benefitPerWeek) or 290
-    local formatters = deps and deps.formatters
-
-    return {
+    return DetectorFactory.createCustom({
         id = "pd_conversion",
         priority = 70,
-        match = function(_, text, context)
+        deps = deps,
+        customMatch = function(text, context)
             local percent = tonumber(text:upper():match("^(%d+)%%*%s*[PD]+$"))
             if not percent then
                 return nil
@@ -19,7 +17,9 @@ return function(deps)
             if not weeks then
                 return nil
             end
-            local formatterSource = (context and context.formatters) or formatters
+
+            local benefitPerWeek = (deps and deps.config and deps.config.pd and deps.config.pd.benefitPerWeek) or 290
+            local formatterSource = (context and context.formatters) or (deps and deps.formatters)
             local currencyFormatter = (formatterSource and formatterSource.currency) or defaultCurrency
             if type(currencyFormatter) ~= "table" or type(currencyFormatter.format) ~= "function" then
                 currencyFormatter = defaultCurrency
@@ -27,12 +27,9 @@ return function(deps)
             local amount = weeks * benefitPerWeek
             local formatted = currencyFormatter.format(amount)
             if not formatted then
-                if logger and logger.w then
-                    logger.w("Currency formatting failed for PD amount")
-                end
-                return nil
+                error("Currency formatting failed for PD amount")
             end
             return string.format("%d%% PD = %.2f weeks = %s", percent, weeks, formatted)
         end,
-    }
+    })
 end

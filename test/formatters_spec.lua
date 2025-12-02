@@ -27,6 +27,13 @@ describe("formatters", function()
     assert.equal("1236.5", arithmetic.process("1.234,5 + 2"))
     assert.equal("1236.5", arithmetic.process("1,234.5 + 2"))
         assert.is_nil(arithmetic.process("bad"))
+        -- Test multiple dollar signs in expressions
+        assert.is_true(arithmetic.isCandidate("$120422.50-$118063.37"))
+        assert.is_true(arithmetic.isCandidate("$120422.50-118063.37"))
+        assert.is_true(arithmetic.isCandidate("120422.50-$118063.37"))
+        assert.equal("$2,359.13", arithmetic.process("$120422.50-$118063.37"))
+        assert.equal("$2,359.13", arithmetic.process("$120422.50-118063.37"))
+        assert.equal("$2,359.13", arithmetic.process("120422.50-$118063.37"))
         local templated = arithmetic.process("$170.89/7", {
             config = {
                 templates = {

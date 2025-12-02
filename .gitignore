@@ -16,3 +16,4 @@ rockspec/*.src.rock
 
 .venv/
 env/
+.env.schema

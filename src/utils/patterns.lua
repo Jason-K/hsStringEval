@@ -27,7 +27,8 @@ EXAMPLE USAGE:
 -- SETUP: A table to store the raw string patterns, mapped by name.
 local rawPatterns = {
     -- Matches strings that look like they could be arithmetic expressions.
-    arithmetic_candidate = "^%s*%$?[%d%.,%s%(%)%+%-%*/%%^]+$",
+    -- Allows dollar signs interspersed with numbers (e.g., "$120-$50" or "120-$50")
+    arithmetic_candidate = "^%s*[%$%d%.,%s%(%)%+%-%*/%%^]+$",
     -- Matches phone numbers that use a semicolon separator.
     phone_semicolon = "%d+;.+",
     -- A general token for a date, like "MM/DD/YYYY".

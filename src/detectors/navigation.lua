@@ -148,15 +148,21 @@ end
 local function looksLikeArithmetic(text)
     if type(text) ~= "string" then return false end
     local trimmed = strings.trim(text)
+    -- Strip dollar signs before checking if it's an arithmetic expression
+    -- This allows expressions like "$120-$50" to be recognized as arithmetic
+    local withoutCurrency = trimmed:gsub("%$", "")
     -- Check if it's a simple arithmetic expression (numbers and operators only)
-    return trimmed:match("^[%d%.%s%(%)%+%-%*/%%^]+$") ~= nil
+    return withoutCurrency:match("^[%d%.%s%(%)%+%-%*/%%^]+$") ~= nil
 end
+local pkgRoot = (...):match("^(.*)%.detectors%.navigation$")
+local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
+
 return function(deps)
-    local logger = deps and deps.logger
-    return {
+    return DetectorFactory.createCustom({
         id = "navigation",
         priority = 10000,
-        match = function(_, text, context)
+        deps = deps,
+        customMatch = function(text, context)
             if type(context) ~= "table" then
                 context = {}
             end
@@ -166,6 +172,7 @@ return function(deps)
             -- Skip navigation if the text looks like an arithmetic expression
             -- This prevents false matches when arithmetic detector fails for other reasons
             if looksLikeArithmetic(text) then
+                local logger = (context and context.logger) or (deps and deps.logger)
                 if logger and logger.d then
                     logger.d("Navigation skipping arithmetic-like text: " .. text)
                 end
@@ -175,6 +182,8 @@ return function(deps)
             if trimmed == "" then
                 return nil
             end
+
+            local logger = (context and context.logger) or (deps and deps.logger)
 
             if isLocalPath(trimmed) then
                 local ok, meta = openInQSpace(trimmed, logger)
@@ -214,5 +223,5 @@ return function(deps)
             end
             return nil
         end,
-    }
+    })
 end

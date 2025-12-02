@@ -1,3 +1,6 @@
+local pkgRoot = (...):match("^(.*)%.detectors%.combinations$")
+local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
+
 local function isCombinationCandidate(text)
     if not text or text == "" then return false end
     if not text:find("[cC]") then return false end
@@ -19,11 +22,11 @@ local function buildCombinationString(values)
 end
 
 return function(deps)
-    local logger = deps and deps.logger
-    return {
+    return DetectorFactory.createCustom({
         id = "combinations",
         priority = 60,
-        match = function(_, text)
+        deps = deps,
+        customMatch = function(text, context)
             if not isCombinationCandidate(text) then
                 return nil
             end
@@ -36,12 +39,9 @@ return function(deps)
             end
             local ok, output = pcall(buildCombinationString, numbers)
             if not ok then
-                if logger and logger.w then
-                    logger.w("Combination detector failed: " .. tostring(output))
-                end
-                return nil
+                error("Combination detector failed: " .. tostring(output))
             end
             return output
         end,
-    }
+    })
 end

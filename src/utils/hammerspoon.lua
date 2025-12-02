@@ -289,6 +289,34 @@ function M.readClipboardFallback(logger)
     return nil
 end
 
+-- PUBLIC METHOD: Write to clipboard using AppleScript as a fallback.
+-- Provides an alternative method to set clipboard content when Hammerspoon pasteboard is unavailable.
+-- @param content string The content to write to clipboard.
+-- @param logger table Optional logger for debugging.
+-- @return boolean true on success, false on failure.
+function M.writeClipboardFallback(content, logger)
+    if type(content) ~= "string" then
+        return false
+    end
+    -- ACTION: Define and run AppleScript to set clipboard content.
+    local script = ([[
+        set theContent to "%s"
+        try
+            tell application "System Events"
+                set the clipboard to theContent
+            end tell
+        end try
+    ]]):format(content:gsub('"', '\\"'))
+    -- ACTION: Run the script.
+    local ok = M.runAppleScript(script, logger)
+    -- SUCCESS: Return true on success.
+    if ok then
+        return true
+    end
+    -- FAIL: Return false on failure.
+    return false
+end
+
 -- PUBLIC METHOD: Get the current time in milliseconds since the epoch.
 -- Provides a higher-resolution timestamp if `hs.timer` is available.
 -- @return number The current time in milliseconds.

@@ -208,4 +208,21 @@ describe("detectors", function()
         assert.is_nil(result)
         assert.equal(0, #helper.openedUrls)
     end)
+    it("skips navigation for arithmetic-like expressions with dollar signs", function()
+        local ctor = helper.requireFresh("detectors.navigation")
+        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local context = {}
+        -- Expressions with dollar signs should be recognized as arithmetic
+        local result1 = detector:match("$120422.50-$118063.37", context)
+        assert.is_nil(result1)
+        assert.equal(0, #helper.openedUrls)
+
+        local result2 = detector:match("$120422.50-118063.37", context)
+        assert.is_nil(result2)
+        assert.equal(0, #helper.openedUrls)
+
+        local result3 = detector:match("120422.50-$118063.37", context)
+        assert.is_nil(result3)
+        assert.equal(0, #helper.openedUrls)
+    end)
 end)

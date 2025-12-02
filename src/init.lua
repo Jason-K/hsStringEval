@@ -18,9 +18,10 @@ local function requireFromRoot(path)
 end
 
 local defaults = requireFromRoot("config.defaults")
+local ConfigManager = requireFromRoot("config.manager")
 local loggerFactory = requireFromRoot("utils.logger")
 local strings = requireFromRoot("utils.strings")
-local patterns = requireFromRoot("utils.patterns")
+local patterns = requireFromRoot("utils.patterns_optimized")
 local pdCache = requireFromRoot("utils.pd_cache")
 local hsUtils = requireFromRoot("utils.hammerspoon")
 local clipboardIO = requireFromRoot("clipboard.io")
@@ -59,10 +60,16 @@ end
 
 function obj:init(opts)
     opts = opts or {}
-    self.config = deepCopy(defaults)
-    if opts.config then
-        deepMerge(self.config, opts.config)
+
+    -- Load and validate configuration using ConfigManager
+    local logger = nil
+    if opts.config and opts.config.logging then
+        -- Create a temporary logger for validation errors
+        local tempLevel = opts.config.logging.level or defaults.loggerLevel
+        logger = loggerFactory.new(self.name or "ClipboardFormatter", tempLevel, opts.config.logging)
     end
+
+    self.config = ConfigManager.load(defaults, opts.config, logger)
 
     local loggingConfig = self.config.logging or {}
     local loggerLevel = loggingConfig.level or self.config.loggerLevel
