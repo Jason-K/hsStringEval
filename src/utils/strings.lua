@@ -123,14 +123,15 @@ function M.extractSeed(str)
 
     -- First, try to find a simple arithmetic-like pattern at the end
     -- Look for the last whitespace before an arithmetic expression
-    local beforeWs, ws, arith = str:match("^(.-)(%s+)([%d%.%(%)%+%-%*/%%^]+)$")
+    -- Include 'c' and 'C' for combination operations like "12c11"
+    local beforeWs, ws, arith = str:match("^(.-)(%s+)([%d%.%(%)%+%-%*/%%^cC]+)$")
     if arith and arith:match("[%d%(]") then
         -- Found arithmetic at the end with leading whitespace - keep the space in prefix
         return beforeWs .. ws, arith
     end
 
     -- Try without requiring leading whitespace (for strings that are just arithmetic)
-    local arithmeticOnly = str:match("^([%d%.%(%)%+%-%*/%%^]+)$")
+    local arithmeticOnly = str:match("^([%d%.%(%)%+%-%*/%%^cC]+)$")
     if arithmeticOnly and arithmeticOnly:match("[%d%(]") then
         return "", arithmeticOnly
     end

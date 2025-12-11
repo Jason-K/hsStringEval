@@ -152,7 +152,8 @@ local function looksLikeArithmetic(text)
     -- This allows expressions like "$120-$50" to be recognized as arithmetic
     local withoutCurrency = trimmed:gsub("%$", "")
     -- Check if it's a simple arithmetic expression (numbers and operators only)
-    return withoutCurrency:match("^[%d%.%s%(%)%+%-%*/%%^]+$") ~= nil
+    -- Include 'c' and 'C' for combination operations (e.g., "12c12")
+    return withoutCurrency:match("^[%d%.%s%(%)%+%-%*/%%^cC]+$") ~= nil
 end
 local pkgRoot = (...):match("^(.*)%.detectors%.navigation$")
 local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
@@ -172,10 +173,6 @@ return function(deps)
             -- Skip navigation if the text looks like an arithmetic expression
             -- This prevents false matches when arithmetic detector fails for other reasons
             if looksLikeArithmetic(text) then
-                local logger = (context and context.logger) or (deps and deps.logger)
-                if logger and logger.d then
-                    logger.d("Navigation skipping arithmetic-like text: " .. text)
-                end
                 return nil
             end
             local trimmed = strings.trim(text)

@@ -143,7 +143,7 @@ function DetectorFactory.createCustom(config)
 
     local id = config.id
     local priority = config.priority or 100
-    customMatch = config.customMatch
+    local customMatch = config.customMatch
 
     if not id then
         error("DetectorFactory.createCustom requires an id")
