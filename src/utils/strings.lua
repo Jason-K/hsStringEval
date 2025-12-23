@@ -118,20 +118,29 @@ function M.extractSeed(str)
         return "", ""
     end
 
+    -- Strip trailing whitespace (including newlines) before pattern matching.
+    -- This ensures patterns that use $ (end-of-string anchor) work correctly.
+    -- Trailing whitespace is typically a copy-paste artifact and not meaningful
+    -- for seed extraction purposes.
+    local originalStr = str
+    str = str:match("^(.-)%s*$") or str
+
     -- STRATEGY: Look for the last whitespace-separated token that could be an expression.
     -- This is more reliable than looking for separators like '[' which can appear in labels.
 
     -- First, try to find a simple arithmetic-like pattern at the end
     -- Look for the last whitespace before an arithmetic expression
     -- Include 'c' and 'C' for combination operations like "12c11"
-    local beforeWs, ws, arith = str:match("^(.-)(%s+)([%d%.%(%)%+%-%*/%%^cC]+)$")
+    -- Include %s for internal whitespace in expressions like "5 + 3"
+    local beforeWs, ws, arith = str:match("^(.-)(%s+)([%d%.%s%(%)%+%-%*/%%^cC]+)$")
     if arith and arith:match("[%d%(]") then
         -- Found arithmetic at the end with leading whitespace - keep the space in prefix
         return beforeWs .. ws, arith
     end
 
     -- Try without requiring leading whitespace (for strings that are just arithmetic)
-    local arithmeticOnly = str:match("^([%d%.%(%)%+%-%*/%%^cC]+)$")
+    -- Include %s for internal whitespace in expressions like "5 + 3"
+    local arithmeticOnly = str:match("^([%d%.%s%(%)%+%-%*/%%^cC]+)$")
     if arithmeticOnly and arithmeticOnly:match("[%d%(]") then
         return "", arithmeticOnly
     end
