@@ -72,6 +72,28 @@ package.preload["hs.ipc"] = function()
     return {}
 end
 
+-- Set up preload for Hammerspoon submodules that are required via require()
+-- These will return the corresponding tables from the global hs stub
+package.preload["hs.uielement"] = function()
+    return hs.uielement
+end
+
+package.preload["hs.eventtap"] = function()
+    return hs.eventtap
+end
+
+package.preload["hs.application"] = function()
+    return hs.application
+end
+
+package.preload["hs.timer"] = function()
+    return hs.timer
+end
+
+package.preload["hs.alert"] = function()
+    return hs.alert
+end
+
 local helper = {
     projectRoot = projectRoot,
     alerts = {},
@@ -222,6 +244,12 @@ local hsStub = {
             return helper.modifiers
         end,
     },
+    uielement = {
+        focusedElement = function()
+            -- Return nil to indicate no focused element available
+            return nil
+        end
+    },
     application = {
         frontmostApplication = function()
             return {
@@ -231,6 +259,11 @@ local hsStub = {
                             helper.windowFocused = true
                         end,
                     }
+                end,
+                selectMenuItem = function(_, menuPath)
+                    -- Mock implementation: return false to indicate menu item not found
+                    -- This forces fallback to keystroke-based copy/paste
+                    return false
                 end,
             }
         end,
