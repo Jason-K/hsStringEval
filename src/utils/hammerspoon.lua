@@ -194,6 +194,8 @@ function M.waitForModifiers(interval)
 end
 
 -- PUBLIC METHOD: Wait for the clipboard content to change from an original value.
+-- Uses adaptive waiting via hs.timer.waitUntil when available for efficiency,
+-- falling back to simple polling if not.
 -- @param original string The original clipboard content to compare against.
 -- @param opts table (optional) Options: `initialDelayMs`, `pollIntervalMs`, `maxPolls`.
 -- @return string|nil The new clipboard content, or nil if it didn't change.
@@ -228,7 +230,26 @@ function M.waitForClipboardChange(original, opts)
         return immediate
     end
 
-    -- ACTION: Poll for changes up to `maxPolls` times.
+    -- ACTION: Use adaptive waiting if hs.timer.waitUntil is available.
+    if hasTimer() and type(hs.timer.waitUntil) == "function" and maxPolls > 0 then
+        local result = nil
+        local success = hs.timer.waitUntil(
+            function()
+                return readChanged() ~= nil
+            end,
+            function()
+                result = readChanged()
+            end,
+            pollInterval / 1000  -- Convert to seconds
+        )
+        -- Return the result if adaptive wait succeeded, otherwise fall through
+        if success and result then
+            return result
+        end
+        -- If adaptive wait didn't succeed, fall through to polling
+    end
+
+    -- FALLBACK: Poll for changes up to `maxPolls` times.
     for _ = 1, maxPolls do
         sleep(pollInterval)
         local value = readChanged()
