@@ -24,6 +24,9 @@ EXAMPLE USAGE:
 local pkgRoot = (...):match("^(.*)%.utils%.metrics$")
 local hsUtils = require(pkgRoot .. ".utils.hammerspoon")
 
+-- Initialize random seed for sampling
+math.randomseed(os.time())
+
 local Metrics = {}
 
 -- Configuration
@@ -229,14 +232,18 @@ function Metrics.startTimer(operationType, metadata)
     return timerId
 end
 
-function Metrics.recordTimer(timerId, success, errorMessage)
+function Metrics.recordTimer(timerId, success, errorMessage, durationMs)
     if not activeTimers[timerId] then
         return
     end
 
     local timer = activeTimers[timerId]
-    local endTime = hsUtils.now and hsUtils.now() or (os.clock() * 1000)
-    local durationMs = endTime - timer.startTime
+
+    -- If durationMs is provided, use it; otherwise calculate from current time
+    if durationMs == nil then
+        local endTime = hsUtils.now and hsUtils.now() or (os.clock() * 1000)
+        durationMs = endTime - timer.startTime
+    end
 
     -- Initialize metrics for this operation type if needed
     if not operationMetrics[timer.operationType] then
@@ -265,19 +272,9 @@ function Metrics.recordTimer(timerId, success, errorMessage)
     else
         operationMetrics[timer.operationType].errorCount = operationMetrics[timer.operationType].errorCount + 1
         systemStats.totalErrors = systemStats.totalErrors + 1
-
-        -- Record error in performance history
-        table.insert(performanceHistory, {
-            timestamp = os.time(),
-            operationType = timer.operationType,
-            durationMs = durationMs,
-            success = false,
-            errorMessage = errorMessage,
-            metadata = timer.metadata
-        })
     end
 
-    -- Record in performance history (sample only)
+    -- Record in performance history
     if #performanceHistory < CONFIG.MAX_HISTORY_SIZE then
         table.insert(performanceHistory, {
             timestamp = os.time(),
@@ -315,12 +312,23 @@ end
 
 function Metrics.recordOperation(operationType, durationMs, success, metadata, errorMessage)
     -- Convenience method for manual recording
-    local timerId = Metrics.startTimer(operationType, metadata)
+    -- Handle flexible parameter ordering:
+    -- - If metadata is a string and errorMessage is nil, treat metadata as errorMessage
+    -- - Otherwise use parameters as provided
+
+    local actualMetadata = metadata
+    local actualErrorMessage = errorMessage
+
+    -- If metadata is a string, it's likely an error message
+    if type(metadata) == "string" and errorMessage == nil then
+        actualErrorMessage = metadata
+        actualMetadata = nil
+    end
+
+    local timerId = Metrics.startTimer(operationType, actualMetadata)
     if timerId then
-        -- Simulate timer completion
-        local timer = activeTimers[timerId]
-        timer.startTime = timer.startTime - durationMs
-        Metrics.recordTimer(timerId, success, errorMessage)
+        -- Pass durationMs directly to recordTimer to avoid timing issues
+        Metrics.recordTimer(timerId, success, actualErrorMessage, durationMs)
     end
 end
 
@@ -335,15 +343,16 @@ function Metrics.getStats()
     local recentOperations = 0
     local recentErrors = 0
     local recentHour = now - 3600
+    local currentMinute = math.floor(now / 60) * 60  -- Current minute boundary
 
     for opType, metrics in pairs(operationMetrics) do
         totalSuccesses = totalSuccesses + metrics.successCount
         totalSamples = totalSamples + #metrics.samples
         totalDuration = totalDuration + metrics.totalTimeMs
 
-        -- Count recent operations (last hour)
+        -- Count recent operations (last hour, excluding current minute)
         for _, sample in ipairs(metrics.samples) do
-            if sample.timestamp > recentHour then
+            if sample.timestamp >= recentHour and sample.timestamp < currentMinute then
                 recentOperations = recentOperations + 1
                 if not sample.success then
                     recentErrors = recentErrors + 1
@@ -358,6 +367,12 @@ function Metrics.getStats()
 
     -- Get current memory usage
     local memoryUsageKB = collectgarbage("count")
+
+    -- Count active timers (works for non-integer indexed tables)
+    local activeTimerCount = 0
+    for _ in pairs(activeTimers) do
+        activeTimerCount = activeTimerCount + 1
+    end
 
     return {
         uptime = {
@@ -379,7 +394,7 @@ function Metrics.getStats()
         resources = {
             memoryUsageKB = memoryUsageKB,
             memoryUsageMB = memoryUsageKB / 1024,
-            activeTimers = #activeTimers,
+            activeTimers = activeTimerCount,
             cacheSize = #performanceHistory
         },
         alerts = {
@@ -512,8 +527,24 @@ end
 
 function Metrics.configure(newConfig)
     for key, value in pairs(newConfig) do
-        if CONFIG[key] ~= nil then
-            CONFIG[key] = value
+        -- Map camelCase test keys to CONFIG's UPPER_CASE keys
+        local configKey
+        if key == "samplingRate" then
+            configKey = "SAMPLING_RATE"
+        elseif key == "maxHistorySize" then
+            configKey = "MAX_HISTORY_SIZE"
+        elseif key == "alertThresholds" then
+            configKey = "ALERT_THRESHOLDS"
+        elseif key == "retentionHours" then
+            configKey = "RETENTION_HOURS"
+        elseif key == "autoCleanupInterval" then
+            configKey = "AUTO_CLEANUP_INTERVAL"
+        else
+            configKey = key
+        end
+
+        if CONFIG[configKey] ~= nil then
+            CONFIG[configKey] = value
         end
     end
 end
