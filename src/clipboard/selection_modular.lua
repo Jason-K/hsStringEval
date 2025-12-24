@@ -212,6 +212,11 @@ local PasteOperations = {}
 function PasteOperations.pasteFormattedText(formattedText, config, debug)
     debug.print("DEBUG: Pasting formatted text")
 
+    -- Handle empty text case
+    if not formattedText or formattedText == "" then
+        return false, "empty_text"
+    end
+
     local clipboardResult = ClipboardOperations.setTextWithRetry(formattedText, config, nil)
     if not clipboardResult then
         return nil, "clipboard_write_failed"
