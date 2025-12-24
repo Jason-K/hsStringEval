@@ -666,8 +666,8 @@ function obj:formatSelectionSeed()
                                             return text, sideEffect
                                         end
                                         if type(formatted) == "string" and formatted ~= seed then
-                                            -- If prefix is only whitespace, preserve it
-                                            if prefix:match("^%s*$") then
+                                            -- If prefix is only whitespace or empty, preserve leading whitespace
+                                            if prefix:match("^%s*$") or prefix == "" then
                                                 return leading_ws .. formatted .. trailing_ws
                                             else
                                                 return prefix .. formatted .. trailing_ws

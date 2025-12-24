@@ -31,6 +31,17 @@ describe("utils modules", function()
         assert.equal("error", logger.level)
     end)
 
+    it("properly stringifies multiple args in structured mode", function()
+        local loggerModule = helper.requireFresh("utils.logger")
+        local logger = loggerModule.new("test", "info", {
+            structured = true,
+            includeTimestamp = false,
+        })
+        logger:w("hello", "world")
+        local entry = logger.messages[#logger.messages]
+        assert.equal('{"level":"warning","message":"hello world"}', entry.args[1])
+    end)
+
     it("handles string helpers", function()
         local strings = helper.requireFresh("utils.strings")
         assert.equal("abc", strings.trim("  abc  "))
@@ -60,6 +71,17 @@ describe("utils modules", function()
         local p5, s5 = strings.extractSeed("")
         assert.equal("", p5)
         assert.equal("", s5)
+    end)
+
+    it("handles pure arithmetic with spaces", function()
+        local strings = helper.requireFresh("utils.strings")
+        local prefix, seed = strings.extractSeed("5 + 3")
+        assert.equal("", prefix)
+        assert.equal("5 + 3", seed)
+
+        local p2, s2 = strings.extractSeed("(5 + 3) * 2")
+        assert.equal("", p2)
+        assert.equal("(5 + 3) * 2", s2)
     end)
 
     it("exposes compiled pattern helpers", function()

@@ -128,7 +128,14 @@ function M.extractSeed(str)
     -- STRATEGY: Look for the last whitespace-separated token that could be an expression.
     -- This is more reliable than looking for separators like '[' which can appear in labels.
 
-    -- First, try to find a simple arithmetic-like pattern at the end
+    -- Try pure arithmetic FIRST (strings that are just arithmetic)
+    -- Include %s for internal whitespace in expressions like "5 + 3"
+    local arithmeticOnly = str:match("^([%d%.%s%(%)%+%-%*/%%^cC]+)$")
+    if arithmeticOnly and arithmeticOnly:match("[%d%(]") then
+        return "", arithmeticOnly
+    end
+
+    -- Then try to find arithmetic after a prefix
     -- Look for the last whitespace before an arithmetic expression
     -- Include 'c' and 'C' for combination operations like "12c11"
     -- Include %s for internal whitespace in expressions like "5 + 3"
@@ -136,13 +143,6 @@ function M.extractSeed(str)
     if arith and arith:match("[%d%(]") then
         -- Found arithmetic at the end with leading whitespace - keep the space in prefix
         return beforeWs .. ws, arith
-    end
-
-    -- Try without requiring leading whitespace (for strings that are just arithmetic)
-    -- Include %s for internal whitespace in expressions like "5 + 3"
-    local arithmeticOnly = str:match("^([%d%.%s%(%)%+%-%*/%%^cC]+)$")
-    if arithmeticOnly and arithmeticOnly:match("[%d%(]") then
-        return "", arithmeticOnly
     end
 
     -- Fallback: Look for common separators that precede an expression
