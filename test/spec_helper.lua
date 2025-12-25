@@ -130,8 +130,12 @@ local function makeLogger(name, level)
         messages = {},
     }
     local function log(method)
-        return function(_, ...)
-            table.insert(obj.messages, { method = method, args = { ... } })
+        return function(self, ...)
+            -- When real logger calls sinkMethod(sink, msg), skip the sink arg
+            -- Detect this by checking if self has setLogLevel (real logger does, mock doesn't)
+            local isRealLoggerCall = type(self.setLogLevel) == "function"
+            local args = isRealLoggerCall and { ... } or { self, ... }
+            table.insert(obj.messages, { method = method, args = args })
         end
     end
     obj.d = log("d")
@@ -239,6 +243,14 @@ local hsStub = {
     eventtap = {
         keyStroke = function(mods, key, _)
             table.insert(helper.keyStrokes, { mods = mods, key = key })
+            -- Simulate clipboard copy for Cmd+C keystroke
+            if type(mods) == "table" and #mods == 1 and mods[1] == "cmd" and key == "c" then
+                clipboardState.primary = clipboardState.selection or clipboardState.primary
+            end
+            -- Simulate clipboard paste for Cmd+V keystroke (for paste operations)
+            if type(mods) == "table" and #mods == 1 and mods[1] == "cmd" and key == "v" then
+                helper.pasteInvoked = true
+            end
         end,
         checkKeyboardModifiers = function()
             return helper.modifiers

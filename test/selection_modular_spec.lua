@@ -201,9 +201,11 @@ describe("SelectionModular", function()
 
         it("should respect disabled strategies", function()
             local config = SelectionModular.Config.normalize({
-                tryAccessibilityAPI = false,
-                copySelection = false,
-                fallbackKeystroke = false
+                config = {
+                    tryAccessibilityAPI = false,
+                    copySelection = false,
+                    fallbackKeystroke = false
+                }
             })
             local debug = SelectionModular.Debug.create(false)
 

@@ -272,6 +272,7 @@ end
 local Orchestrator = {}
 
 function Orchestrator.executeSelection(formatter, opts)
+    opts = opts or {}
     local config = Config.normalize(opts)
     local debug = Debug.create(config.debug, opts.logger)
 

@@ -247,12 +247,6 @@ local function formatMessage(fmt, ...)
         return ""
     end
     local argc = select("#", ...)
-    if argc > 0 and type(fmt) == "string" then
-        local ok, formatted = pcall(string.format, fmt, ...)
-        if ok then
-            return formatted
-        end
-    end
     if argc == 0 then
         return tostring(fmt)
     end
@@ -363,6 +357,7 @@ function M.new(name, level, opts)
     local includeTimestamp = opts.includeTimestamp ~= false
     local logger = {
         messages = sink.messages,
+        level = normalizeLevel(consoleLevel) or normalizeLevel(defaultConsoleLevel) or "warning",
     }
 
     --[[
@@ -408,39 +403,43 @@ function M.new(name, level, opts)
       @param fmt (string) The format string.
       @param ... (any) Values to be formatted.
     --]]
-    logger.d = function(fmt, ...)
+    logger.d = function(self, fmt, ...)
         emit("d", "debug", fmt, ...)
     end
     --[[
       Logs a message at the 'info' level.
+      @param self (table) The logger instance.
       @param fmt (string) The format string.
       @param ... (any) Values to be formatted.
     --]]
-    logger.i = function(fmt, ...)
+    logger.i = function(self, fmt, ...)
         emit("i", "info", fmt, ...)
     end
     --[[
       Logs a message at the 'warning' level.
+      @param self (table) The logger instance.
       @param fmt (string) The format string.
       @param ... (any) Values to be formatted.
     --]]
-    logger.w = function(fmt, ...)
+    logger.w = function(self, fmt, ...)
         emit("w", "warning", fmt, ...)
     end
     --[[
       Logs a message at the 'error' level.
+      @param self (table) The logger instance.
       @param fmt (string) The format string.
       @param ... (any) Values to be formatted.
     --]]
-    logger.e = function(fmt, ...)
+    logger.e = function(self, fmt, ...)
         emit("e", "error", fmt, ...)
     end
     --[[
       Logs a message at the 'fault' level.
+      @param self (table) The logger instance.
       @param fmt (string) The format string.
       @param ... (any) Values to be formatted.
     --]]
-    logger.f = function(fmt, ...)
+    logger.f = function(self, fmt, ...)
         emit("f", "fault", fmt, ...)
     end
 
@@ -451,6 +450,8 @@ function M.new(name, level, opts)
     --]]
     logger.setLogLevel = function(_, newLevel)
         local resolved = resolveLogLevelValue(newLevel)
+        local normalized = normalizeLevel(resolved) or normalizeLevel(consoleLevel) or "warning"
+        logger.level = normalized
         if sink.setLogLevel then
             consoleLevel = applySinkLogLevel(sink, resolved, consoleLevel) or consoleLevel
         end
