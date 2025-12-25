@@ -162,6 +162,7 @@ return function(deps)
     return DetectorFactory.createCustom({
         id = "navigation",
         priority = 10000,
+        dependencies = {"logger"},
         deps = deps,
         customMatch = function(text, context)
             if type(context) ~= "table" then
