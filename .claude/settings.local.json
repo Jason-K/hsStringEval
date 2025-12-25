@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git log:*)",
+      "Bash(busted:*)",
+      "Bash(unset:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(./scripts/test.sh:*)",
+      "Bash(./test/debug_leading_whitespace.lua:*)",
+      "Bash(LUA_PATH=\"src/?.lua;src/utils/?.lua;src/detectors/?.lua;src/formatters/?.lua;test/?.lua;;\" lua5.4:*)",
+      "Bash(/Users/jason/Scripts/Metascripts/hsStringEval/scripts/test.sh:*)",
+      "Bash(LUA_PATH=\"src/?.lua;src/?/init.lua;test/?.lua;;\" busted:*)",
+      "Skill(superpowers:brainstorming)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
