@@ -58,9 +58,9 @@ M.PD = {
 local hs = _G.hs
 M.PATHS = {
     -- PD mapping files
-    PD_BUNDLED = "hsStringEval/config/pd_mappings.lua",
-    PD_USER = hs and hs.configdir and (hs.configdir .. "/hsStringEval/pd_mappings.lua") or nil,
-    PD_FALLBACK = hs and hs.configdir and (hs.configdir .. "/pd_mappings.lua") or nil
+    PD_BUNDLED = "data/pd_percent_to_weeks.txt",
+    PD_LEGACY = "PD - percent to weeks.txt",
+    PD_FALLBACK = hs and hs.configdir and (hs.configdir .. "/PD - percent to weeks.txt") or "/Users/jason/Scripts/Python/JJK_PdtoWeeksDollars/PD - percent to weeks.txt"
 }
 
 -- Validation Constants

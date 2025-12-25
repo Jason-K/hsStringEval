@@ -1,3 +1,6 @@
+local pkgRoot = (...):match("^(.*)%.config%.defaults$")
+local constants = require(pkgRoot and (pkgRoot .. ".config.constants") or "ClipboardFormatter.src.config.constants")
+
 return {
     loggerLevel = "warning",
     logging = {
@@ -7,7 +10,7 @@ return {
     },
     restoreClipboard = true,
     processing = {
-        throttleMs = 500,
+        throttleMs = constants.TIME.THROTTLE_DEFAULT,
     },
     templates = {
         arithmetic = nil,
@@ -18,16 +21,16 @@ return {
     selection = {
         waitAfterClearMs = 100,
         modifierCheckInterval = 50,
-        copyDelayMs = 300,
-        pasteDelayMs = 60,
+        copyDelayMs = constants.TIME.SELECTION_COPY_DELAY,
+        pasteDelayMs = constants.TIME.SELECTION_PASTE_DELAY,
         pollIntervalMs = 50,
         maxPolls = 8,
         retryWithEventtap = true,
     },
     pd = {
-        bundledFile = "data/pd_percent_to_weeks.txt",
-        legacyFile = "PD - percent to weeks.txt",
-        fallbackPath = "/Users/jason/Scripts/Python/JJK_PDtoWeeksDollars/PD - percent to weeks.txt",
-        benefitPerWeek = 290,
+        bundledFile = constants.PATHS.PD_BUNDLED,
+        legacyFile = constants.PATHS.PD_LEGACY,
+        fallbackPath = constants.PATHS.PD_FALLBACK,
+        benefitPerWeek = constants.PD.BENEFIT_PER_WEEK,
     },
 }
