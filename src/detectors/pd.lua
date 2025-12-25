@@ -1,6 +1,7 @@
 local pkgRoot = (...):match("^(.*)%.detectors%.pd$")
 local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
 local defaultCurrency = require(pkgRoot .. ".formatters.currency")
+local constants = require(pkgRoot .. ".config.constants")
 
 return function(deps)
     return DetectorFactory.createCustom({
@@ -21,7 +22,7 @@ return function(deps)
 
             -- Use deps.config for defaults, context.config can override for testing
             local cfg = (context and context.config) or deps.config
-            local benefitPerWeek = (cfg and cfg.pd and cfg.pd.benefitPerWeek) or 290
+            local benefitPerWeek = (cfg and cfg.pd and cfg.pd.benefitPerWeek) or constants.PD.BENEFIT_PER_WEEK
             local currencyFormatter = (deps.formatters and deps.formatters.currency) or defaultCurrency
             if type(currencyFormatter) ~= "table" or type(currencyFormatter.format) ~= "function" then
                 currencyFormatter = defaultCurrency

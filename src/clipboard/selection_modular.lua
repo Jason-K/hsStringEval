@@ -20,6 +20,7 @@ local pkgRoot = (...):match("^(.*)%.clipboard%.selection_modular$")
 local clipboardIO = require(pkgRoot .. ".clipboard.io")
 local restore = require(pkgRoot .. ".clipboard.restore")
 local ClipboardOperations = require(pkgRoot .. ".utils.clipboard_operations")
+local constants = require(pkgRoot .. ".config.constants")
 
 local Selection = {}
 
@@ -74,17 +75,17 @@ function Config.normalize(opts)
         fallbackKeystroke = isEnabled("fallbackKeystroke", "fallbackKeystroke"),
 
         -- Timing configurations
-        copyWaitTimeoutMs = selectionCfg.copyWaitTimeoutMs or 600,
-        copyDelayMs = selectionCfg.copyDelayMs or 300,
-        fallbackDelayMs = selectionCfg.fallbackDelayMs or 20000,
-        pasteDelayMs = selectionCfg.pasteDelayMs or 60,
+        copyWaitTimeoutMs = selectionCfg.copyWaitTimeoutMs or constants.TIME.SELECTION_TIMEOUT,
+        copyDelayMs = selectionCfg.copyDelayMs or constants.TIME.SELECTION_COPY_DELAY,
+        fallbackDelayMs = selectionCfg.fallbackDelayMs or constants.TIME.SELECTION_FALLBACK_DELAY,
+        pasteDelayMs = selectionCfg.pasteDelayMs or constants.TIME.SELECTION_PASTE_DELAY,
 
         -- Restore behavior
         restoreOriginal = opts.restoreOriginal ~= false,
 
         -- Enhanced retry configuration
         retry = selectionCfg.retry or {
-            maxRetries = 3,
+            maxRetries = constants.VALIDATION.MAX_SELECTION_RETRIES,
             baseDelayMs = 100,
             maxDelayMs = 1000,
             exponentialBackoff = true

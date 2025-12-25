@@ -149,9 +149,12 @@ end
 -- MODULE CONFIGURATION
 -- ============================================================================
 
+local pkgRoot = (...):match("^(.*)%.utils%.patterns$")
+local constants = require(pkgRoot and (pkgRoot .. ".config.constants") or "ClipboardFormatter.src.config.constants")
+
 local config = {
-    maxCacheSize = 100,
-    memoryThresholdMB = 10,
+    maxCacheSize = constants.CACHE.PATTERN_MAX_SIZE,
+    memoryThresholdMB = constants.CACHE.PATTERN_MEMORY_THRESHOLD_MB,
     autoCleanup = true,
 }
 

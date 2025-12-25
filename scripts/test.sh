@@ -22,4 +22,5 @@ if [ "$#" -eq 0 ]; then
     set -- test
 fi
 
-busted "$@"
+# Load spec_helper for custom module loader
+busted --helper=spec_helper "$@"
