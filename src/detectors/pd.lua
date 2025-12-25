@@ -19,8 +19,9 @@ return function(deps)
                 return nil
             end
 
-            -- deps.config and deps.formatters are now injected by factory
-            local benefitPerWeek = (deps.config and deps.config.pd and deps.config.pd.benefitPerWeek) or 290
+            -- Use deps.config for defaults, context.config can override for testing
+            local cfg = (context and context.config) or deps.config
+            local benefitPerWeek = (cfg and cfg.pd and cfg.pd.benefitPerWeek) or 290
             local currencyFormatter = (deps.formatters and deps.formatters.currency) or defaultCurrency
             if type(currencyFormatter) ~= "table" or type(currencyFormatter.format) ~= "function" then
                 currencyFormatter = defaultCurrency
