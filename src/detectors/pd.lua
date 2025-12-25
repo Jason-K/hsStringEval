@@ -6,6 +6,7 @@ return function(deps)
     return DetectorFactory.createCustom({
         id = "pd_conversion",
         priority = 70,
+        dependencies = {"config", "formatters"},
         deps = deps,
         customMatch = function(text, context)
             local percent = tonumber(text:upper():match("^(%d+)%%*%s*[PD]+$"))
@@ -18,9 +19,9 @@ return function(deps)
                 return nil
             end
 
-            local benefitPerWeek = (deps and deps.config and deps.config.pd and deps.config.pd.benefitPerWeek) or 290
-            local formatterSource = (context and context.formatters) or (deps and deps.formatters)
-            local currencyFormatter = (formatterSource and formatterSource.currency) or defaultCurrency
+            -- deps.config and deps.formatters are now injected by factory
+            local benefitPerWeek = (deps.config and deps.config.pd and deps.config.pd.benefitPerWeek) or 290
+            local currencyFormatter = (deps.formatters and deps.formatters.currency) or defaultCurrency
             if type(currencyFormatter) ~= "table" or type(currencyFormatter.format) ~= "function" then
                 currencyFormatter = defaultCurrency
             end

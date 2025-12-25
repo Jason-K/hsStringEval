@@ -424,12 +424,16 @@ function helper.clearAlerts()
 end
 
 -- Create standard detector deps with mock patterns for tests
--- Detectors with explicit dependencies require patterns to be provided
+-- Detectors with explicit dependencies require patterns, config, and formatters to be provided
 function helper.detectorDeps(overrides)
     local patterns = require("ClipboardFormatter.src.utils.patterns")
+    local formatters = require("ClipboardFormatter.src.formatters")
+    local defaults = require("ClipboardFormatter.src.config.defaults")
     local deps = {
         logger = hs.logger.new("test", "debug"),
         patterns = patterns.all(),
+        config = defaults,
+        formatters = formatters,
     }
     if overrides then
         for k, v in pairs(overrides) do

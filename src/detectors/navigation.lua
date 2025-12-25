@@ -161,7 +161,7 @@ return function(deps)
     return DetectorFactory.createCustom({
         id = "navigation",
         priority = 10000,
-        dependencies = {"logger"},
+        dependencies = {"logger", "config"},
         deps = deps,
         customMatch = function(text, context)
             if type(context) ~= "table" then
@@ -180,7 +180,8 @@ return function(deps)
                 return nil
             end
 
-            local logger = (context and context.logger) or (deps and deps.logger)
+            -- deps.logger is injected by factory, context can override
+            local logger = deps.logger or (context and context.logger)
 
             if isLocalPath(trimmed) then
                 local ok, meta = openInQSpace(trimmed, logger)
