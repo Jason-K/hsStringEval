@@ -150,11 +150,11 @@ local function parseDateComponents(token)
         }
     end
 
-    local dayToken, monthNameTail, trailingTail = cleaned:match("^(%d%d?)%s+([%a%.]+)(.*)$")
+    local dayToken2, monthNameTail, trailingTail = cleaned:match("^(%d%d?)%s+([%a%.]+)(.*)$")
     if monthNameTail then
         local lookupKey = monthNameTail:gsub("%.", ""):lower()
         local monthValue = monthLookup[lookupKey]
-        local dayValue = tonumber(dayToken)
+        local dayValue = tonumber(dayToken2)
         if not monthValue or not dayValue then
             return nil
         end

@@ -1,5 +1,3 @@
-local pkgRoot = (...):match("^(.*)%.config%.manager$")
-
 local ConfigManager = {}
 
 -- Valid logger levels

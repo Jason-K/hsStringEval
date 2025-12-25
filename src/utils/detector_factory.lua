@@ -214,8 +214,17 @@ function DetectorFactory.createCustom(config)
         priority = priority,
         match = function(_, text, context)
             local logger = injected.logger or (context and context.logger)
-            local workingContext = hasDeclaredDeps and mergeContext(context, injected) or context
-            local ok, result = pcall(customMatch, text, workingContext)
+
+            -- For createCustom, inject dependencies directly into the original context
+            -- This preserves context mutations by the customMatch function (e.g., setting __lastSideEffect)
+            if hasDeclaredDeps and injected and next(injected) ~= nil then
+                context = context or {}
+                for k, v in pairs(injected) do
+                    context[k] = v
+                end
+            end
+
+            local ok, result = pcall(customMatch, text, context)
 
             if not ok then
                 if logger and logger.w then
