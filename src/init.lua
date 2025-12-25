@@ -25,7 +25,7 @@ local patterns = requireFromRoot("utils.patterns_optimized")
 local pdCache = requireFromRoot("utils.pd_cache")
 local hsUtils = requireFromRoot("utils.hammerspoon")
 local clipboardIO = requireFromRoot("clipboard.io")
-local selection = requireFromRoot("clipboard.selection")
+local selection = requireFromRoot("clipboard.selection_modular")
 local registryFactory = requireFromRoot("detectors.registry")
 
 local detectorConstructors = {

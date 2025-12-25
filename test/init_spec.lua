@@ -285,7 +285,7 @@ return {
     end)
     it("formats selection via helper module", function()
         local instance = Formatter:init()
-        local selectionModule = require("clipboard.selection")
+        local selectionModule = require("clipboard.selection_modular")
         local originalApply = selectionModule.apply
         ---@diagnostic disable-next-line: duplicate-set-field
         selectionModule.apply = function(formatter, opts)
@@ -304,7 +304,7 @@ return {
 
     it("alerts when selection is unavailable", function()
         local instance = Formatter:init()
-        local selectionModule = require("clipboard.selection")
+        local selectionModule = require("clipboard.selection_modular")
         local originalApply = selectionModule.apply
         ---@diagnostic disable-next-line: duplicate-set-field
         selectionModule.apply = function()

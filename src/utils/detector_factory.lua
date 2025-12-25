@@ -37,6 +37,53 @@ local function validateFormatter(formatter, requiredMethods)
     return true, nil
 end
 
+-- Validate and inject declared dependencies
+-- Returns: (injectedDeps, hasDeclaredDependencies)
+local function injectDependencies(config, availableDeps)
+    local declared = config.dependencies or {}
+    local injected = {}
+
+    -- If no dependencies declared, return empty table with flag (backwards compatibility)
+    if #declared == 0 then
+        return {}, false
+    end
+
+    -- Validate all declared dependencies exist
+    for _, depName in ipairs(declared) do
+        if not availableDeps or availableDeps[depName] == nil then
+            error(("Detector '%s' requires dependency '%s' but it was not provided"):format(
+                tostring(config.id), depName))
+        end
+        injected[depName] = availableDeps[depName]
+    end
+
+    return injected, true
+end
+
+-- Merge context with injected dependencies
+local function mergeContext(context, injected)
+    -- If no injected dependencies, return context as-is
+    if not injected or next(injected) == nil then
+        return context
+    end
+
+    local merged = {}
+
+    -- Copy context values first
+    if context then
+        for k, v in pairs(context) do
+            merged[k] = v
+        end
+    end
+
+    -- Override with injected dependencies (only if present)
+    for k, v in pairs(injected) do
+        merged[k] = v
+    end
+
+    return merged
+end
+
 -- Create a standardized detector with common validation and error handling
 function DetectorFactory.create(config)
     -- Validate required parameters
@@ -67,6 +114,9 @@ function DetectorFactory.create(config)
         error("DetectorFactory.create requires a defaultFormatter")
     end
 
+    -- Inject declared dependencies
+    local injected, hasDeclaredDeps = injectDependencies(config, config.deps)
+
     -- Return the standardized detector
     return {
         id = id,
@@ -74,7 +124,7 @@ function DetectorFactory.create(config)
         match = function(_, text, context)
             -- Use custom match function if provided, otherwise use standard pattern
             if customMatch then
-                return customMatch(text, context, {
+                return customMatch(text, mergeContext(context, injected), {
                     formatterResolver = formatterResolver,
                     errorHandler = errorHandler,
                     validateFormatter = validateFormatter
@@ -82,8 +132,11 @@ function DetectorFactory.create(config)
             end
 
             -- Standard detector pattern
-            local logger = (context and context.logger) or (config.deps and config.deps.logger)
-            local formatters = (context and context.formatters) or (config.deps and config.deps.formatters)
+            -- If no dependencies declared, use context directly (backwards compatibility)
+            local workingContext = hasDeclaredDeps and mergeContext(context, injected) or context
+            local logger = injected.logger or (context and context.logger)
+            local formatters = injected.formatters or (context and context.formatters)
+            local config = injected.config or (context and context.config)
 
             -- Resolve formatter using the resolver function
             local formatter = formatterResolver(formatterKey, context, formatters, defaultFormatter)
@@ -96,18 +149,18 @@ function DetectorFactory.create(config)
 
             -- Check if text is a candidate
             if candidateCheck then
-                local isCandidate = candidateCheck(text, context, formatter)
+                local isCandidate = candidateCheck(text, workingContext, formatter)
                 if not isCandidate then
                     return nil
                 end
             elseif requiredMethods[1] == "isCandidate" then
                 -- Default candidate check using formatter
-                if not formatter.isCandidate(text, context) then
+                if not formatter.isCandidate(text, workingContext) then
                     return nil
                 end
             elseif requiredMethods[1] == "isRangeCandidate" then
                 -- Special case for date range detector
-                if not formatter.isRangeCandidate(text, context) then
+                if not formatter.isRangeCandidate(text, workingContext) then
                     return nil
                 end
             end
@@ -124,7 +177,7 @@ function DetectorFactory.create(config)
                     processFunction = formatter.process
                 end
             end
-            local ok, result = pcall(processFunction, text, context)
+            local ok, result = pcall(processFunction, text, workingContext)
 
             if not ok then
                 return errorHandler(id, result, logger)
@@ -153,12 +206,16 @@ function DetectorFactory.createCustom(config)
         error("DetectorFactory.createCustom requires a customMatch function")
     end
 
+    -- Inject declared dependencies
+    local injected, hasDeclaredDeps = injectDependencies(config, config.deps)
+
     return {
         id = id,
         priority = priority,
         match = function(_, text, context)
-            local logger = (context and context.logger) or (config.deps and config.deps.logger)
-            local ok, result = pcall(customMatch, text, context)
+            local logger = injected.logger or (context and context.logger)
+            local workingContext = hasDeclaredDeps and mergeContext(context, injected) or context
+            local ok, result = pcall(customMatch, text, workingContext)
 
             if not ok then
                 if logger and logger.w then

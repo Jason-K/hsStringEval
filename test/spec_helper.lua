@@ -130,9 +130,12 @@ local function makeLogger(name, level)
         messages = {},
     }
     local function log(method)
-        -- Emit calls sinkMethod(sink, message), so first arg is sink (self), second is message
-        return function(_, message)
-            table.insert(obj.messages, { method = method, args = { message } })
+        return function(self, ...)
+            -- When real logger calls sinkMethod(sink, msg), skip the sink arg
+            -- Detect this by checking if self has setLogLevel (real logger does, mock doesn't)
+            local isRealLoggerCall = type(self.setLogLevel) == "function"
+            local args = isRealLoggerCall and { ... } or { self, ... }
+            table.insert(obj.messages, { method = method, args = args })
         end
     end
     obj.d = log("d")

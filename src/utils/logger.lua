@@ -247,16 +247,6 @@ local function formatMessage(fmt, ...)
         return ""
     end
     local argc = select("#", ...)
-    if argc > 0 and type(fmt) == "string" then
-        -- Only try string.format if the format string contains format specifiers
-        -- Otherwise string.format will ignore extra arguments
-        if fmt:match("%%") then
-            local ok, formatted = pcall(string.format, fmt, ...)
-            if ok then
-                return formatted
-            end
-        end
-    end
     if argc == 0 then
         return tostring(fmt)
     end
@@ -367,7 +357,7 @@ function M.new(name, level, opts)
     local includeTimestamp = opts.includeTimestamp ~= false
     local logger = {
         messages = sink.messages,
-        level = normalizeLevel(requestedConsole) or "warning",
+        level = normalizeLevel(consoleLevel) or normalizeLevel(defaultConsoleLevel) or "warning",
     }
 
     --[[
@@ -402,25 +392,14 @@ function M.new(name, level, opts)
             if includeTimestamp then
                 payload.timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
             end
-            -- When sink == logger (fallback case), don't pass sink as arg
-            -- to avoid it being captured in the logged arguments
-            if sink == logger then
-                sinkMethod(structuredLine(payload))
-            else
-                sinkMethod(sink, structuredLine(payload))
-            end
+            sinkMethod(sink, structuredLine(payload))
         else
-            if sink == logger then
-                sinkMethod(message)
-            else
-                sinkMethod(sink, message)
-            end
+            sinkMethod(sink, message)
         end
     end
 
     --[[
       Logs a message at the 'debug' level.
-      @param self (table) The logger instance.
       @param fmt (string) The format string.
       @param ... (any) Values to be formatted.
     --]]
@@ -471,11 +450,11 @@ function M.new(name, level, opts)
     --]]
     logger.setLogLevel = function(_, newLevel)
         local resolved = resolveLogLevelValue(newLevel)
+        local normalized = normalizeLevel(resolved) or normalizeLevel(consoleLevel) or "warning"
+        logger.level = normalized
         if sink.setLogLevel then
             consoleLevel = applySinkLogLevel(sink, resolved, consoleLevel) or consoleLevel
         end
-        -- Also update the logger.level property for test access
-        logger.level = normalizeLevel(resolved) or logger.level
     end
 
     --[[
