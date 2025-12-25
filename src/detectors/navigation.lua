@@ -155,7 +155,6 @@ local function looksLikeArithmetic(text)
     -- Include 'c' and 'C' for combination operations (e.g., "12c12")
     return withoutCurrency:match("^[%d%.%s%(%)%+%-%*/%%^cC]+$") ~= nil
 end
-local pkgRoot = (...):match("^(.*)%.detectors%.navigation$")
 local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
 
 return function(deps)

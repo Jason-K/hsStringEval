@@ -19,7 +19,6 @@ EXAMPLE USAGE:
 local pkgRoot = (...):match("^(.*)%.clipboard%.selection_modular$")
 local clipboardIO = require(pkgRoot .. ".clipboard.io")
 local restore = require(pkgRoot .. ".clipboard.restore")
-local strings = require(pkgRoot .. ".utils.strings")
 local ClipboardOperations = require(pkgRoot .. ".utils.clipboard_operations")
 
 local Selection = {}
@@ -138,9 +137,7 @@ function SelectionStrategies.tryMenuCopy(config, debug, originalClipboard)
     local timer = require("hs.timer")
 
     -- Try menu copy first
-    local copiedViaMenu = false
     if app and app:selectMenuItem({ "Edit", "Copy" }) then
-        copiedViaMenu = true
         debug.print("DEBUG: Invoked Edit > Copy via menu")
     else
         debug.print("DEBUG: Copy menu unavailable; sending Cmd+C keystroke")
@@ -241,9 +238,7 @@ function PasteOperations.pasteFormattedText(formattedText, config, debug)
 
     timer.usleep(config.pasteDelayMs * 1000)
 
-    local pastedViaMenu = false
     if app and app:selectMenuItem({ "Edit", "Paste" }) then
-        pastedViaMenu = true
         debug.print("DEBUG: Invoked Edit > Paste via menu")
     else
         debug.print("DEBUG: Paste menu unavailable; sending Cmd+V keystroke")

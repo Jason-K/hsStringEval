@@ -211,6 +211,11 @@ describe("Metrics", function()
     end)
 
     describe("configuration", function()
+        after_each(function()
+            -- Restore default sampling rate after each test
+            Metrics.configure({samplingRate = 1.0})
+        end)
+
         it("should update configuration", function()
             local originalConfig = Metrics.getConfiguration()
 
