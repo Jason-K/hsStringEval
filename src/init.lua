@@ -27,6 +27,8 @@ local hsUtils = requireFromRoot("utils.hammerspoon")
 local clipboardIO = requireFromRoot("clipboard.io")
 local selection = requireFromRoot("clipboard.selection_modular")
 local registryFactory = requireFromRoot("detectors.registry")
+local hookSystem = requireFromRoot("spoon.hooks")
+local hotkeySystem = requireFromRoot("spoon.hotkeys")
 
 local detectorConstructors = {
     requireFromRoot("detectors.arithmetic"),
@@ -81,10 +83,10 @@ function obj:init(opts)
     end
 
     self:loadPDMapping()
-    self:applyHooks(opts.hooks)
-    self:loadHooksFromFile(opts.hooksFile)
+    hookSystem.apply(self, opts.hooks)
+    hookSystem.loadFromFile(self, opts.hooksFile)
     if self.config.hotkeys and self.config.hotkeys.installHelpers then
-        self:installHotkeyHelpers()
+        hotkeySystem.installHelpers(self)
     end
 
     return self
@@ -233,108 +235,26 @@ function obj:setLogLevel(level)
     end
 end
 
-local helperHotkeys = {
-    FormatClip = function(self)
-        return self:formatClipboardDirect()
-    end,
-    FormatClipSeed = function(self)
-        return self:formatClipboardSeed()
-    end,
-    -- Selects to beginning of line, cuts, evaluates the seed at the end of the
-    -- selection, pastes the result, and restores the original clipboard.
-    -- Useful when calling from Karabiner so timing is handled inside Hammerspoon.
-    FormatCutSeed = function(self)
-        -- Select to beginning of line, then run the robust selection-based flow
-        if type(hs) == "table" and hs.eventtap then
-            hs.eventtap.keyStroke({ "cmd", "shift" }, "left", 0)
-            hs.timer.doAfter(0.08, function()
-                self:formatSelectionSeed()
-            end)
-            return true
-        end
-        return self:formatSelectionSeed()
-    end,
-    FormatSelected = function(self)
-        if self.logger and self.logger.d then
-            self.logger.d("FormatSelected wrapper called")
-        end
-        return self:formatSelection()
-    end,
-}
-
-function obj:installHotkeyHelpers()
-    self:removeHotkeyHelpers()
-    self._hotkeyHelpers = {}
-    for name, fn in pairs(helperHotkeys) do
-        local wrapper = function()
-            return fn(self)
-        end
-        _G[name] = wrapper
-        self._hotkeyHelpers[name] = wrapper
-    end
-    return self._hotkeyHelpers
-end
-
-function obj:removeHotkeyHelpers()
-    if not self._hotkeyHelpers then
-        return
-    end
-    for name, wrapper in pairs(self._hotkeyHelpers) do
-        if _G[name] == wrapper then
-            _G[name] = nil
-        end
-    end
-    self._hotkeyHelpers = nil
-end
-
+-- Forwarding methods for hook system (backward compatibility)
 function obj:applyHooks(hooks)
-    if hooks == nil then return end
-    if type(hooks) == "function" then
-        local ok, err = pcall(hooks, self)
-        if not ok and type(self.logger) == "table" and self.logger.w then
-            self.logger.w("Hook function failed: " .. tostring(err))
-        end
-        return
-    end
-    if type(hooks) == "table" then
-        if type(hooks.formatters) == "function" then
-            local okFormatters, errFormatters = pcall(hooks.formatters, self)
-            if not okFormatters and type(self.logger) == "table" and self.logger.w then
-                self.logger.w("Formatter hook failed: " .. tostring(errFormatters))
-            end
-        end
-        if type(hooks.detectors) == "function" then
-            local ok, err = pcall(hooks.detectors, self)
-            if not ok and type(self.logger) == "table" and self.logger.w then
-                self.logger.w("Detector hook failed: " .. tostring(err))
-            end
-        end
-    end
+    return hookSystem.apply(self, hooks)
 end
 
 function obj:loadHooksFromFile(path)
-    local hookPath = path
-    if not hookPath and self.spoonPath then
-        hookPath = self.spoonPath .. "/config/user_hooks.lua"
-    end
-    if not hookPath then
-        return
-    end
-    local chunk, err = loadfile(hookPath)
-    if not chunk then
-        if self.logger and self.logger.d then
-            self.logger.d("No user hooks loaded: " .. tostring(err))
-        end
-        return
-    end
-    local ok, hooks = pcall(chunk)
-    if not ok then
-        if self.logger and self.logger.w then
-            self.logger.w("Failed to execute hooks file: " .. tostring(hooks))
-        end
-        return
-    end
-    self:applyHooks(hooks)
+    return hookSystem.loadFromFile(self, path)
+end
+
+-- Forwarding methods for hotkey system (backward compatibility)
+function obj:installHotkeyHelpers()
+    return hotkeySystem.installHelpers(self)
+end
+
+function obj:removeHotkeyHelpers()
+    return hotkeySystem.removeHelpers(self)
+end
+
+function obj:bindHotkeys(mapping)
+    return hotkeySystem.bindHotkeys(self, mapping)
 end
 
 function obj:formatClipboardDirect()
@@ -685,17 +605,6 @@ function obj:formatSelectionSeed()
     end
 
     return false
-end
-
-function obj:bindHotkeys(mapping)
-    local spec = {
-        format = hs.fnutils.partial(self.formatClipboardDirect, self),
-        -- New binding for seed-on-selection formatting
-        formatSelectionSeed = hs.fnutils.partial(self.formatSelectionSeed, self),
-        formatSeed = hs.fnutils.partial(self.formatClipboardSeed, self),
-        formatSelection = hs.fnutils.partial(self.formatSelection, self),
-    }
-    hs.spoons.bindHotkeysToSpec(spec, mapping)
 end
 
 return obj
