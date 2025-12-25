@@ -128,3 +128,97 @@ describe("utils modules", function()
         end)
     end)
 end)
+
+describe("Detector Factory - Dependency Validation", function()
+    local detector_factory
+    local defaultFormatter
+
+    setup(function()
+        detector_factory = require("ClipboardFormatter.src.utils.detector_factory")
+        defaultFormatter = require("ClipboardFormatter.src.formatters.arithmetic")
+    end)
+
+    it("should validate that declared dependencies are available", function()
+        local ok, err = pcall(function()
+            return detector_factory.create({
+                id = "bad_detector",
+                dependencies = {"nonexistent_dependency"},
+                priority = 50,
+                formatterKey = "arithmetic",
+                defaultFormatter = defaultFormatter,
+                deps = {}  -- Empty dependencies - missing "nonexistent_dependency"
+            })
+        end)
+
+        assert.is_false(ok)
+        assert.is_truthy(err:match("nonexistent_dependency") or err:match("not provided"))
+    end)
+
+    it("should allow detectors with no dependencies", function()
+        local ok, detector = pcall(function()
+            return detector_factory.create({
+                id = "good_detector",
+                dependencies = {},
+                priority = 50,
+                formatterKey = "arithmetic",
+                defaultFormatter = defaultFormatter,
+                deps = {}
+            })
+        end)
+
+        assert.is_true(ok)
+        assert.is_not_nil(detector)
+        assert.equals("good_detector", detector.id)
+    end)
+
+    it("should allow detectors with valid dependencies", function()
+        local patterns = require("ClipboardFormatter.src.utils.patterns")
+        local ok, detector = pcall(function()
+            return detector_factory.create({
+                id = "valid_detector",
+                dependencies = {"patterns"},
+                priority = 50,
+                formatterKey = "arithmetic",
+                defaultFormatter = defaultFormatter,
+                deps = { patterns = patterns.all() }
+            })
+        end)
+
+        assert.is_true(ok)
+        assert.is_not_nil(detector)
+        assert.equals("valid_detector", detector.id)
+    end)
+
+    it("should validate dependencies for createCustom as well", function()
+        local ok, err = pcall(function()
+            return detector_factory.createCustom({
+                id = "bad_custom_detector",
+                dependencies = {"missing_dep"},
+                priority = 50,
+                deps = {},
+                customMatch = function() return nil end
+            })
+        end)
+
+        assert.is_false(ok)
+        assert.is_truthy(err:match("missing_dep") or err:match("not provided"))
+    end)
+
+    it("should inject declared dependencies into context for createCustom", function()
+        local mockLogger = { d = function() end }
+        local detector = detector_factory.createCustom({
+            id = "custom_with_logger",
+            dependencies = {"logger"},
+            priority = 50,
+            deps = { logger = mockLogger },
+            customMatch = function(text, context)
+                -- Logger should be injected into context
+                return context.logger and "ok" or nil
+            end
+        })
+
+        assert.is_not_nil(detector)
+        local result = detector:match("test", {})
+        assert.equals("ok", result)
+    end)
+end)
