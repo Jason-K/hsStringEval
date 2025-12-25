@@ -33,7 +33,8 @@ This is a refactored Hammerspoon spoon for clipboard formatting with a modular a
 
 **Detectors (`src/detectors/`)**
 - Modular pattern detection system via registry pattern
-- Each detector constructor receives: `{ logger, config, formatters }`
+- Each detector created via `detector_factory.create()` with dependency injection
+- Detectors can optionally declare `dependencies` array (e.g., `{"logger", "config", "formatters"}`)
 - Built-in detectors: arithmetic, date ranges, PD conversions, combinations, phone numbers, navigation
 - Detectors return `{ formatted, matchedId, rawResult, sideEffect }`
 
@@ -43,15 +44,17 @@ This is a refactored Hammerspoon spoon for clipboard formatting with a modular a
 - Used by multiple detectors
 
 **Utilities (`src/utils/`)**
-- `patterns.lua`: Cached regex compilation shared across modules
+- `detector_factory.lua`: Factory for creating detectors with dependency injection support
+- `patterns.lua`: **Unified** pattern registry with LRU cache and memory-aware caching; configurable via `patterns.configure()`
 - `strings.lua`: String utilities including `extractSeed()` for seed formatting
-- `logger.lua`: Structured logging with configurable levels
+- `logger.lua`: Structured logging with configurable levels per sink
 - `hammerspoon.lua`: Hammerspoon-specific utilities (timing, focus, clipboard polling)
 - `pd_cache.lua`: PD mapping file loading with caching
 
 **Clipboard/Selection (`src/clipboard/`)**
 - `io.lua`: Cross-platform clipboard access with AppleScript/eventtap fallbacks
-- `selection.lua`: Complex selection formatting with modifier key detection, clipboard restoration, and polling
+- `selection_modular.lua`: **(primary)** Selection formatting with strategy pattern, multiple fallback methods (accessibility API, menu copy, eventtap keystroke), clipboard restoration, and polling
+- `restore.lua`: Clipboard restoration helper
 
 ### Key Architectural Patterns
 
@@ -59,11 +62,15 @@ This is a refactored Hammerspoon spoon for clipboard formatting with a modular a
 
 **Detector Registry**: Centralized pattern matching through `detectors/registry.lua` that processes input through all registered detectors in order
 
+**Dependency Injection**: `detector_factory.lua` supports optional dependency declaration via `dependencies` array; validates and injects only declared dependencies
+
 **Context Passing**: All detector/formatter calls receive a context object containing `{ logger, config, patterns, pdMapping, formatters }`
+
+**Pattern Caching**: Unified `patterns.lua` provides LRU cache with memory pressure monitoring; configurable via `patterns.configure({maxCacheSize, memoryThresholdMB, autoCleanup})`
 
 **Seed Processing**: The `formatSeed` methods extract expressions after `=`, `:`, or whitespace boundaries for use with Karabiner integration
 
-**Selection Handling**: Complex async flow with clipboard polling, modifier key checking, and automatic restoration to handle different application behaviors
+**Selection Handling**: `selection_modular.lua` uses strategy pattern with multiple fallback methods (accessibility API → menu copy → eventtap keystroke) for acquiring selected text
 
 ### Configuration
 - Default config in `src/config/defaults.lua`
