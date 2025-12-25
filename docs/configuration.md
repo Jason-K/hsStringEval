@@ -98,38 +98,45 @@ callbacks include:
 ```lua
 local Formatter = hs.loadSpoon("ClipboardFormatter")
 Formatter:init({
-  hooks = {
-    formatters = function(obj)
-      obj:registerFormatter("shout", {
-        process = function(_, text)
-          return string.upper(text)
-        end,
-      })
-    end,
-    detectors = function(obj)
-      obj:registerDetector({
-        id = "shout",
-        priority = 20,
-        match = function(_, text, context)
-          local fmt = context.formatters and context.formatters.shout
-          if fmt and type(fmt.process) == "function" then
-            return fmt.process(fmt, text)
-          end
-        end,
-      })
-    end,
-  },
-    },
     hooks = {
+        formatters = function(obj)
+            obj:registerFormatter("shout", {
+                process = function(_, text)
+                    return string.upper(text)
+                end,
+            })
+        end,
         detectors = function(obj)
             obj:registerDetector({
-                id = "custom",
+                id = "shout",
                 priority = 20,
-                match = function(_, text)
-                    if text == "hello" then return "world" end
+                match = function(_, text, context)
+                    local fmt = context.formatters and context.formatters.shout
+                    if fmt and type(fmt.process) == "function" then
+                        return fmt.process(fmt, text)
+                    end
                 end,
             })
         end,
     },
+})
+```
+
+You can also use a simple function hook for quick customization:
+
+```lua
+local Formatter = hs.loadSpoon("ClipboardFormatter")
+Formatter:init({
+    hooks = function(formatter)
+        formatter:registerDetector({
+            id = "custom:example",
+            priority = 25,
+            match = function(_, text)
+                if text == "ping" then
+                    return "pong"
+                end
+            end,
+        })
+    end,
 })
 ```

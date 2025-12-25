@@ -71,8 +71,6 @@ Once the new commits are on GitHub:
 
 - Always push `hsStringEval` before updating the `.hammerspoon` pointer so the
   referenced commit exists on GitHub.
-- When packaging a release, follow `docs/release_checklist.md` and then repeat the
-  submodule update so downstream clones pick up the tagged commit.
 - Use `git submodule status` regularly to confirm there are no local edits inside the
   submodule tree.
 

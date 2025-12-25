@@ -1,100 +1,142 @@
 # Module Overview
 
-ClipboardFormatter is organized into focused Lua modules under `src/` to keep
-runtime behavior testable outside of Hammerspoon. This document summarizes each
-module and the responsibilities it owns.
+ClipboardFormatter is organized into focused Lua modules under `src/` for maintainability and testability.
+
+## Directory Structure
+
+```
+src/
+├── init.lua                 # Main spoon entry point (thin forwarding layer)
+├── clipboard/               # Clipboard I/O operations
+├── detectors/                # Pattern detectors
+├── formatters/               # Output formatters
+├── utils/                    # Shared utilities
+├── spoon/                    # Spoon-internal modules
+└── config/                   # Configuration management
+```
 
 ## Clipboard Layer (`src/clipboard/`)
 
-- `io.lua`: reads and writes the primary or "find" pasteboard, falling back to
-  AppleScript when Hammerspoon APIs return empty strings.
-- `selection_modular.lua`: **(primary)** coordinates copy/format/paste for the
-  active selection using shared Hammerspoon helpers and the main formatter
-  pipeline. Implements a strategy pattern with multiple acquisition methods
-  (accessibility API, menu copy, eventtap keystroke) and modular sub-components
-  (`Config`, `Debug`, `SelectionStrategies`, `TextProcessor`, `PasteOperations`,
-  `Results`, `Orchestrator`) for clear separation of concerns.
-- `restore.lua`: simple helper that restores clipboard contents when requested
-  after formatting operations.
+### `io.lua`
+Cross-platform clipboard read/write operations with AppleScript fallback.
+
+### `selection_modular.lua`
+**Primary selection formatting module.** Implements strategy pattern with multiple acquisition methods:
+1. Accessibility API (fastest, no clipboard interference)
+2. Menu-based copy with clipboard polling
+3. Eventtap keystroke fallback (slowest but most compatible)
+
+Key components:
+- `Config` - Configuration management
+- `SelectionStrategies` - Pluggable acquisition methods
+- `TextProcessor` - Text transformation pipeline
+- `PasteOperations` - Paste handling
+- `Results` - Result formatting
+- `Orchestrator` - Coordinates the workflow
+
+### `restore.lua`
+Simple helper for restoring clipboard contents after formatting operations.
 
 ## Detector Layer (`src/detectors/`)
 
-Each detector constructor accepts dependencies via `detector_factory.lua` and
-returns an object exposing `id`, `priority`, and `match`. Detectors can optionally
-declare a `dependencies` array to enable explicit dependency injection.
+Each detector is created via `detector_factory.create()` with optional dependency injection. Detectors expose:
+- `id` - Unique identifier
+- `priority` - Processing order (lower number = higher priority)
+- `match()` - Pattern matching function
+- `dependencies` (optional) - Explicit dependency declarations
 
-- `arithmetic.lua`, `date.lua`, `pd.lua`, `combinations.lua`, `phone.lua`:
-  domain-specific matchers that transform strings into formatted results.
-- `registry.lua`: table-driven detector registry that enforces priority ordering
-  and returns the first successful match.
+| Detector | Purpose |
+|----------|---------|
+| `arithmetic.lua` | Arithmetic expressions (`+`, `-`, `*`, `/`, `%`, `^`) |
+| `date.lua` | Date range detection and formatting |
+| `pd.lua` | Permanent Disability percentage-to-weeks conversions |
+| `combinations.lua` | Probability combination calculations |
+| `phone.lua` | Phone number detection and formatting |
+| `navigation.lua` | URL and file path navigation (side effects only) |
+
+### `registry.lua`
+Central detector registry that processes input through all detectors in priority order. Supports early exit optimization.
 
 ## Formatter Layer (`src/formatters/`)
 
-Formatters provide reusable transformations leveraged by detectors or the
-clipboard pipeline. Each formatter accepts an optional context table so the
-detectors can share cached pattern handles and other context without referencing
-globals directly.
+Formatters provide reusable transformations used by detectors.
 
-- `arithmetic.lua`: safe arithmetic evaluation (supports `+`, `-`, `*`, `/`,
-  `%`, `^`, and localized decimal separators) with optional currency output
-  when dollar signs are present.
-- `currency.lua`: number-to-currency formatting helpers.
-- `date.lua`: inclusive date range description builder (handles textual month
-  names, ISO timestamps, and inferred years for partial inputs).
-- `phone.lua`: annotated phone number formatter.
+| Formatter | Purpose |
+|-----------|---------|
+| `arithmetic.lua` | Safe arithmetic evaluation with localization and currency support |
+| `currency.lua` | Number-to-currency formatting |
+| `date.lua` | Date parsing and range description building |
+| `phone.lua` | Phone number annotation and formatting |
 
 ## Utility Layer (`src/utils/`)
 
-- `detector_factory.lua`: factory for creating standardized detectors with
-  dependency injection support. Detectors can optionally declare a `dependencies`
-  array (e.g., `{"logger", "config", "formatters"}`) which will be validated and
-  injected. Backward compatible - detectors work without explicit declarations.
-- `hammerspoon.lua`: shared helpers for interacting with Hammerspoon APIs
-  (pasteboard operations, AppleScript/eventtap copy and paste, window focus).
-- `logger.lua`: lightweight structured logger used during tests and runtime.
-  Supports configurable levels per sink (console/file), structured JSON output,
-  and fallback mode for non-Hammerspoon environments.
-- `patterns.lua`: **(unified)** centralized pattern registry with LRU cache and
-  memory-aware caching. Exposes compiled helpers (`match`, `contains`, `gmatch`)
-  and configuration via `configure({maxCacheSize, memoryThresholdMB, autoCleanup})`.
-  Consolidates functionality from the original `patterns.lua` and
-  `patterns_memory_aware.lua` modules.
-- `pd_cache.lua`: memoizes PD mapping files and exposes helpers for lookup and
-  cache invalidation.
-- `strings.lua`: trimming, splitting, equality, and normalization utilities.
+| Module | Purpose |
+|--------|---------|
+| `detector_factory.lua` | Factory for creating detectors with dependency injection |
+| `strings.lua` | String manipulation utilities (trim, extractSeed, etc.) |
+| `patterns.lua` | Centralized pattern registry with LRU caching |
+| `logger.lua` | Structured logging with configurable levels |
+| `hammerspoon.lua` | Hammerspoon-specific utilities |
+| `pd_cache.lua` | PD mapping file loading and caching |
+| `error_handler.lua` | Safe error wrapping and logging |
+| `logging_wrapper.lua` | Null-safe logger wrappers |
+| `string_processing.lua` | Number localization, URL encoding, expression extraction |
+| `config_accessor.lua` | Safe nested config access with merging |
+| `validation.lua` | Reusable validation utilities |
+
+## Spoon Internal Modules (`src/spoon/`)
+
+These modules were extracted from the monolithic `init.lua` to improve organization:
+
+| Module | Purpose |
+|--------|---------|
+| `hooks.lua` | Hook system management (`applyHooks`, `loadHooksFromFile`) |
+| `hotkeys.lua` | Hotkey binding and helper installation |
+| `pd_mapping.lua` | PD mapping file loading and caching |
+| `clipboard.lua` | Clipboard I/O wrapper |
+| `processing.lua` | Core clipboard processing pipeline |
+
+## Configuration Layer (`src/config/`)
+
+| Module | Purpose |
+|--------|---------|
+| `defaults.lua` | Default configuration values |
+| `constants.lua` | Centralized constants (priorities, time, cache, paths) |
+| `schema.lua` | Type definitions for all configuration sections |
+| `validator.lua` | Schema-based type validation |
+| `manager.lua` | Configuration loading and merging |
 
 ## Entry Point (`src/init.lua`)
 
-The spoon entry point wires detectors, formatters, hooks, clipboard helpers, and
-configuration values into a single object that can be loaded by Hammerspoon or
-required directly by the test harness. It exposes helper methods such as
-`registerDetector`, `registerFormatter`, `getFormatter`, `setLogLevel`, and
-`installHotkeyHelpers`/`removeHotkeyHelpers` so runtime hooks can extend or
-override behaviour without editing core modules while optionally restoring
-legacy global hotkey convenience wrappers.
+Thin forwarding layer that:
+- Loads all modules
+- Initializes the spoon
+- Provides public API methods
+- Maintains backward compatibility
 
-## Architecture Notes
+## Dependency Injection
 
-### Dependency Injection
-Detectors use `detector_factory.create()` which supports optional dependency
-declaration:
+Detectors can optionally declare dependencies:
+
 ```lua
--- Detector with explicit dependencies
 return function(deps)
     return DetectorFactory.create({
         id = "my_detector",
         dependencies = {"logger", "config", "formatters"},
         deps = deps,
-        ...
+        match = function(self, text, context)
+            -- Use context.logger, context.config, context.formatters
+        end,
     })
 end
 ```
 
-### Pattern Caching
-The `patterns` module provides automatic LRU caching with configurable memory
-management:
+## Pattern Caching
+
+The `patterns` module provides automatic LRU caching with configurable memory management:
+
 ```lua
-local patterns = require("src.utils.patterns")
+local patterns = require("ClipboardFormatter.src.utils.patterns")
 patterns.configure({
     maxCacheSize = 100,
     memoryThresholdMB = 10,
@@ -102,9 +144,12 @@ patterns.configure({
 })
 ```
 
-### Selection Strategies
-`selection_modular` implements multiple fallback strategies for acquiring
-selected text:
-1. Accessibility API (fastest, no clipboard interference)
-2. Menu-based copy with clipboard polling
-3. Eventtap keystroke fallback (longest delay)
+## Test Helpers
+
+Located in `test/`:
+
+| Module | Purpose |
+|--------|---------|
+| `spec_helper.lua` | Test environment setup and Hammerspoon mocks |
+| `mock_helper.lua` | Spy, stub, mock utilities for tests |
+| `property_helper.lua` | Property-based testing with random generators |

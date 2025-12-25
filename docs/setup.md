@@ -22,8 +22,8 @@ brew install --cask hammerspoon
 ## 2. Clone the Repository
 
 ```bash
-git clone https://github.com/Jason-K/Hammerflow.spoon.git
-cd Hammerflow.spoon
+git clone https://github.com/Jason-K/hsStringEval.git
+cd hsStringEval
 ```
 
 ## 3. Install LuaRocks Dependencies
