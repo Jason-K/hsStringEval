@@ -52,14 +52,27 @@ function Config.normalize(opts)
     opts = opts or {}
     local selectionCfg = opts.config or {}
 
+    -- Helper to check if a boolean option is enabled
+    -- Checks both opts.config[key] and opts[key] for flexibility
+    local function isEnabled(configKey, optsKey)
+        local configVal = selectionCfg[configKey]
+        local optsVal = opts[optsKey]
+        -- If either explicitly false, disable
+        if configVal == false or optsVal == false then
+            return false
+        end
+        -- Otherwise, default to true
+        return true
+    end
+
     return {
         -- Debug options
         debug = selectionCfg.debug or opts.debug or false,
 
         -- Selection method preferences
-        tryAccessibilityAPI = selectionCfg.tryAccessibilityAPI ~= false,
-        copySelection = selectionCfg.copySelection ~= false,
-        fallbackKeystroke = selectionCfg.fallbackKeystroke ~= false,
+        tryAccessibilityAPI = isEnabled("tryAccessibilityAPI", "tryAccessibilityAPI"),
+        copySelection = isEnabled("copySelection", "copySelection"),
+        fallbackKeystroke = isEnabled("fallbackKeystroke", "fallbackKeystroke"),
 
         -- Timing configurations
         copyWaitTimeoutMs = selectionCfg.copyWaitTimeoutMs or 600,
@@ -272,6 +285,7 @@ end
 local Orchestrator = {}
 
 function Orchestrator.executeSelection(formatter, opts)
+    opts = opts or {}
     local config = Config.normalize(opts)
     local debug = Debug.create(config.debug, opts.logger)
 

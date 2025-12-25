@@ -130,8 +130,9 @@ local function makeLogger(name, level)
         messages = {},
     }
     local function log(method)
-        return function(_, ...)
-            table.insert(obj.messages, { method = method, args = { ... } })
+        -- Emit calls sinkMethod(sink, message), so first arg is sink (self), second is message
+        return function(_, message)
+            table.insert(obj.messages, { method = method, args = { message } })
         end
     end
     obj.d = log("d")
@@ -239,6 +240,14 @@ local hsStub = {
     eventtap = {
         keyStroke = function(mods, key, _)
             table.insert(helper.keyStrokes, { mods = mods, key = key })
+            -- Simulate clipboard copy for Cmd+C keystroke
+            if type(mods) == "table" and #mods == 1 and mods[1] == "cmd" and key == "c" then
+                clipboardState.primary = clipboardState.selection or clipboardState.primary
+            end
+            -- Simulate clipboard paste for Cmd+V keystroke (for paste operations)
+            if type(mods) == "table" and #mods == 1 and mods[1] == "cmd" and key == "v" then
+                helper.pasteInvoked = true
+            end
         end,
         checkKeyboardModifiers = function()
             return helper.modifiers
