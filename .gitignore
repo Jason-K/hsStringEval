@@ -14,6 +14,9 @@ rockspec/*.src.rock
 .vscode/
 .idea/
 
+# Git worktrees
+.worktrees/
+
 .venv/
 env/
 .env.schema
