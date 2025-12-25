@@ -87,12 +87,14 @@ function obj:init(opts)
 
     self.registry = registryFactory.new(self.logger)
     self.detectors = {}
+    self.pdMapping = {}
 
     for _, constructor in ipairs(detectorConstructors) do
         local detector = constructor({
             logger = self.logger,
             config = self.config,
             formatters = self.formatters,
+            pdMapping = self.pdMapping,
         })
         table.insert(self.detectors, detector)
         self.registry:register(detector)
