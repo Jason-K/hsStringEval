@@ -49,6 +49,10 @@ function Registry:process(text, context)
                 matched = normalizeResult(result)
                 matchedId = detector.id
                 rawResult = result
+                -- Early exit: stop processing if we got a match and earlyExit is enabled
+                if context.earlyExit then
+                    break
+                end
             end
         elseif not ok and self.logger and self.logger.e then
             self.logger.e(string.format("Detector '%s' error: %s", detector.id or "unknown", result))
