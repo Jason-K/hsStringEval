@@ -32,7 +32,7 @@ describe("detectors", function()
 
     it("detects arithmetic expressions", function()
         local ctor = helper.requireFresh("detectors.arithmetic")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         assert.equal("arithmetic", detector.id)
         local output = detector:match("1+1")
         assert.equal("2", output)
@@ -55,7 +55,7 @@ describe("detectors", function()
 
     it("applies arithmetic templates from context", function()
         local ctor = helper.requireFresh("detectors.arithmetic")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local output = detector:match("$10*2", {
             config = {
                 templates = {
@@ -68,7 +68,7 @@ describe("detectors", function()
 
     it("detects date ranges", function()
         local ctor = helper.requireFresh("detectors.date")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local output = detector:match("5/6/23 to 5/7/23")
         assert.matches("05/06/2023 to 05/07/2023", output)
         local textOutput = detector:match("May 6, 2023 to June 7, 2023")
@@ -111,21 +111,21 @@ describe("detectors", function()
 
     it("detects PD conversions", function()
         local ctor = helper.requireFresh("detectors.pd")
-        local detector = ctor({ logger = hs.logger.new("test", "debug"), config = { pd = { benefitPerWeek = 300 } } })
+        local detector = ctor(helper.detectorDeps({ config = { pd = { benefitPerWeek = 300 } } }))
         local output = detector:match("15pd", { pdMapping = { [15] = 10 } })
         assert.equal("15% PD = 10.00 weeks = $3,000.00", output)
     end)
 
     it("detects combination strings", function()
         local ctor = helper.requireFresh("detectors.combinations")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local output = detector:match("10 c 5 c 3")
         assert.equal("10% c 5% = 15% c 3% = 17%", output)
     end)
 
     it("detects annotated phone numbers", function()
         local ctor = helper.requireFresh("detectors.phone")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local output = detector:match("5551234567;home")
         assert.equal("(555) 123-4567,,,home", output)
         local context = {
@@ -146,7 +146,7 @@ describe("detectors", function()
 
     it("opens local paths in QSpace via navigation detector", function()
         local ctor = helper.requireFresh("detectors.navigation")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local context = {}
         local result = detector:match("~/Documents", context)
         assert.is_table(result)
@@ -163,7 +163,7 @@ describe("detectors", function()
 
     it("opens http urls in the default browser", function()
         local ctor = helper.requireFresh("detectors.navigation")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local context = {}
         local url = "https://example.com/path"
         local result = detector:match(url, context)
@@ -175,7 +175,7 @@ describe("detectors", function()
 
     it("opens application urls using open -u", function()
         local ctor = helper.requireFresh("detectors.navigation")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local context = {}
         local appUrl = "obsidian://open?vault=Main"
         local result = detector:match(appUrl, context)
@@ -190,7 +190,7 @@ describe("detectors", function()
 
     it("falls back to Kagi search when no detectors match", function()
         local ctor = helper.requireFresh("detectors.navigation")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local context = {}
         local query = "example search"
         local _ = detector:match(query, context)
@@ -202,7 +202,7 @@ describe("detectors", function()
 
     it("skips navigation when a prior detector matches", function()
         local ctor = helper.requireFresh("detectors.navigation")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local context = { __matches = { { id = "arithmetic" } } }
         local result = detector:match("https://example.com", context)
         assert.is_nil(result)
@@ -210,7 +210,7 @@ describe("detectors", function()
     end)
     it("skips navigation for arithmetic-like expressions with dollar signs", function()
         local ctor = helper.requireFresh("detectors.navigation")
-        local detector = ctor({ logger = hs.logger.new("test", "debug") })
+        local detector = ctor(helper.detectorDeps())
         local context = {}
         -- Expressions with dollar signs should be recognized as arithmetic
         local result1 = detector:match("$120422.50-$118063.37", context)

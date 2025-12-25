@@ -6,6 +6,7 @@ return function(deps)
     return DetectorFactory.create({
         id = "date_range",
         priority = 80,
+        dependencies = {"patterns"},
         formatterKey = "date",
         defaultFormatter = defaultFormatter,
         requiredMethods = {"isRangeCandidate", "describeRange"}, -- date uses custom method names

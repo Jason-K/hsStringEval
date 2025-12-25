@@ -6,6 +6,7 @@ return function(deps)
     return DetectorFactory.create({
         id = "arithmetic",
         priority = 100,
+        dependencies = {"patterns"},
         formatterKey = "arithmetic",
         defaultFormatter = defaultFormatter,
         deps = deps,

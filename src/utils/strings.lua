@@ -122,7 +122,6 @@ function M.extractSeed(str)
     -- This ensures patterns that use $ (end-of-string anchor) work correctly.
     -- Trailing whitespace is typically a copy-paste artifact and not meaningful
     -- for seed extraction purposes.
-    local originalStr = str
     str = str:match("^(.-)%s*$") or str
 
     -- STRATEGY: Look for the last whitespace-separated token that could be an expression.

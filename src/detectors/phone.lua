@@ -6,6 +6,7 @@ return function(deps)
     return DetectorFactory.create({
         id = "phone",
         priority = 50,
+        dependencies = {"patterns"},
         formatterKey = "phone",
         defaultFormatter = defaultFormatter,
         requiredMethods = {"isCandidate", "format"}, -- phone uses "format" instead of "process"

@@ -1,5 +1,3 @@
-local pkgRoot = (...):match("^(.*)%.utils%.detector_factory$")
-
 local DetectorFactory = {}
 
 -- Default error handler for detectors
@@ -69,16 +67,16 @@ local function mergeContext(context, injected)
 
     local merged = {}
 
-    -- Copy context values first
+    -- Copy injected dependencies first (provides defaults)
+    for k, v in pairs(injected) do
+        merged[k] = v
+    end
+
+    -- Then copy context values (so context overrides injected, allowing test mocks)
     if context then
         for k, v in pairs(context) do
             merged[k] = v
         end
-    end
-
-    -- Override with injected dependencies (only if present)
-    for k, v in pairs(injected) do
-        merged[k] = v
     end
 
     return merged
@@ -136,7 +134,6 @@ function DetectorFactory.create(config)
             local workingContext = hasDeclaredDeps and mergeContext(context, injected) or context
             local logger = injected.logger or (context and context.logger)
             local formatters = injected.formatters or (context and context.formatters)
-            local config = injected.config or (context and context.config)
 
             -- Resolve formatter using the resolver function
             local formatter = formatterResolver(formatterKey, context, formatters, defaultFormatter)

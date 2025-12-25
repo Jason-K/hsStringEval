@@ -21,7 +21,6 @@ EXAMPLE USAGE:
 
 local pkgRoot = (...):match("^(.*)%.undo%.manager$")
 local clipboardIO = require(pkgRoot .. ".clipboard.io")
-local hsUtils = require(pkgRoot .. ".utils.hammerspoon")
 
 local UndoManager = {}
 

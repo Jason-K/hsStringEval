@@ -25,6 +25,7 @@ return function(deps)
     return DetectorFactory.createCustom({
         id = "combinations",
         priority = 60,
+        dependencies = {},
         deps = deps,
         customMatch = function(text, context)
             if not isCombinationCandidate(text) then

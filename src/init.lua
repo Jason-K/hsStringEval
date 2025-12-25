@@ -37,27 +37,6 @@ local detectorConstructors = {
     requireFromRoot("detectors.navigation"),
 }
 
-local function deepCopy(tbl)
-    if type(tbl) ~= "table" then return tbl end
-    local result = {}
-    for k, v in pairs(tbl) do
-        result[k] = deepCopy(v)
-    end
-    return result
-end
-
-local function deepMerge(base, overrides)
-    if type(overrides) ~= "table" then return base end
-    for k, v in pairs(overrides) do
-        if type(v) == "table" and type(base[k]) == "table" then
-            deepMerge(base[k], v)
-        else
-            base[k] = v
-        end
-    end
-    return base
-end
-
 function obj:init(opts)
     opts = opts or {}
 
@@ -93,6 +72,7 @@ function obj:init(opts)
         local detector = constructor({
             logger = self.logger,
             config = self.config,
+            patterns = self.patterns,
             formatters = self.formatters,
             pdMapping = self.pdMapping,
         })
@@ -456,7 +436,6 @@ end
 -- 3) Evaluate only the seed at the end of the selection
 -- 4) Paste back result (or original text for side effects) and optionally restore clipboard
 function obj:cutLineAndFormatSeed(opts)
-    opts = opts or {}
     if type(hs) ~= "table" or not hs.eventtap then
         if self.logger and self.logger.w then
             self.logger.w("cutLineAndFormatSeed requires hs.eventtap")
@@ -508,7 +487,8 @@ function obj:cutLineAndFormatSeed(opts)
             remainingMs = remainingMs - math.min(copyDelayMs, 200)
         end
         local deadline = os.clock() * 1000 + math.max(remainingMs, 0)
-        while (type(cutText) ~= "string" or cutText == "" or cutText == originalClipboard) and (os.clock() * 1000) < deadline do
+        local notExpired = (os.clock() * 1000) < deadline
+        while (type(cutText) ~= "string" or cutText == "" or cutText == originalClipboard) and notExpired do
             local current = clipboardIO.getPrimaryPasteboard()
             if type(current) == "string" and current ~= "" and current ~= originalClipboard then
                 cutText = current

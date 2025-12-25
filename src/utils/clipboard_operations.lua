@@ -97,7 +97,7 @@ function ClipboardOperations.getTextWithRetry(config, logger)
 
     return executeWithRetry(function()
         -- Try multiple methods in order
-        local content = nil
+        local content
 
         -- Method 1: Primary pasteboard
         if hsUtils.hasPasteboard() then
@@ -140,7 +140,6 @@ function ClipboardOperations.setTextWithRetry(text, config, logger)
 
     return executeWithRetry(function()
         -- Try multiple write methods
-        local success = false
 
         -- Method 1: Direct pasteboard write
         if hsUtils.hasPasteboard() then
