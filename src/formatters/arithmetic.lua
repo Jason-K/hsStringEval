@@ -223,6 +223,13 @@ local function evaluateEquation(equation)
     return result
 end
 
+-- Detect if expression requires tokenization (has operators needing special handling)
+local function needsTokenization(expr)
+    -- Check for operators requiring tokenization
+    -- % and ^ operators need tokenization for proper precedence handling
+    return expr:match("%%") or expr:match("%^")
+end
+
 function Arithmetic.isCandidate(content, opts)
     if not content or content == "" then return false end
     local normalized = strings.normalizeMinus(content)
@@ -254,13 +261,27 @@ function Arithmetic.process(content, opts)
     local displayInput = strings.trim(normalized)
     local cleaned = normalizeExpressionNumbers(removeCurrencyAndWhitespace(normalized), opts)
 
-    local result = select(1, evaluateEquation(cleaned))
-    if result == nil then
+    local result
+    -- Smart path selection: use tokenization directly for complex operators
+    if needsTokenization(cleaned) then
+        -- Use tokenization for expressions with % or ^ operators
         if cleaned:match("[%(%)]") then
+            -- Parentheses with complex operators: tokenization doesn't support them
             return nil
         end
         local tokens = tokenizeExpression(cleaned)
         result = evaluateTokens(tokens)
+    else
+        -- Use fast load() path for simple expressions
+        result = select(1, evaluateEquation(cleaned))
+        if result == nil then
+            -- Fallback to tokenization if load() fails and no parentheses
+            if cleaned:match("[%(%)]") then
+                return nil
+            end
+            local tokens = tokenizeExpression(cleaned)
+            result = evaluateTokens(tokens)
+        end
     end
 
     if not result then
