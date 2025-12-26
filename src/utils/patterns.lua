@@ -123,6 +123,10 @@ local rawPatterns = {
     date_range_dash = "^(%d+[/%.-]%d+[/%.-]%d+)%-(%d+[/%.-]%d+[/%.-]%d+)$",
     -- Matches a number that may be localized with commas or periods
     localized_number = "^%s*[+-]?[%d%.%,]+%s*$",
+    -- Percentage patterns for arithmetic
+    percentage_of = "^(%d+)%%%s+of%s+([%d%.,]+)$",
+    percentage_add = "^([%d%.,]+)%s*%+%s*(%d+%%)$",
+    percentage_sub = "^([%d%.,]+)%s*%-%s*(%d+%%)$",
 }
 
 -- Compiles a raw pattern string into a table of useful functions

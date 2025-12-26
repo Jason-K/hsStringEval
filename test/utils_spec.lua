@@ -222,3 +222,28 @@ describe("Detector Factory - Dependency Validation", function()
         assert.equals("ok", result)
     end)
 end)
+
+describe("percentage patterns", function()
+    local patterns = require("src.utils.patterns").all()
+
+    it("matches '15% of 24000'", function()
+        local p = patterns.percentage_of
+        assert.is_not_nil(p)
+        local match = p.match("15% of 24000")
+        assert.is_not_nil(match)
+    end)
+
+    it("matches '24000 + 15%'", function()
+        local p = patterns.percentage_add
+        assert.is_not_nil(p)
+        local match = p.match("24000 + 15%")
+        assert.is_not_nil(match)
+    end)
+
+    it("matches '24000 - 25%'", function()
+        local p = patterns.percentage_sub
+        assert.is_not_nil(p)
+        local match = p.match("24000 - 25%")
+        assert.is_not_nil(match)
+    end)
+end)
