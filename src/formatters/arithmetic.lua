@@ -81,6 +81,10 @@ local function tokenizeExpression(equation)
     for i = 1, #equation do
         local char = equation:sub(i, i)
         if char:match("[%d%.]") then
+            -- Check for implicit multiplication: ) followed by digit
+            if not lastWasOperator and #tokens > 0 and tokens[#tokens] == ")" then
+                table.insert(tokens, "*")
+            end
             currentNum = currentNum .. char
             lastWasOperator = false
         elseif char == "(" then
@@ -89,11 +93,11 @@ local function tokenizeExpression(equation)
                 local numeric = tonumber(currentNum)
                 if numeric then
                     table.insert(tokens, tostring(numeric * (isNegative and -1 or 1)))
+                    table.insert(tokens, "*")  -- Implicit multiplication: number followed by (
                 end
                 currentNum = ""
                 isNegative = false
             end
-            table.insert(tokens, "*")  -- Implicit multiplication
             table.insert(tokens, char)
             lastWasOperator = true
         elseif char == ")" then
@@ -107,7 +111,7 @@ local function tokenizeExpression(equation)
                 isNegative = false
             end
             table.insert(tokens, char)
-            lastWasOperator = false
+            lastWasOperator = false  -- ) acts like a number for implicit multiplication
         elseif char == "+" or char == "-" or char == "*" or char == "/" or char == "%" or char == "^" then
             if char == "-" and lastWasOperator then
                 isNegative = not isNegative
@@ -241,27 +245,6 @@ local function evaluateTokens(tokens)
     return eval[1]
 end
 
-local function evaluateEquation(equation)
-    local cleaned = equation:gsub("(%d+)%s*%.%s*", "%1.")
-    cleaned = cleaned:gsub("[^%d%.%+%-%*/%%^%s%(%)]", "")
-    local env = {}
-    local chunk, err = load("return " .. cleaned, "equation", "t", env)
-    if not chunk then
-        return nil, err
-    end
-    local ok, result = pcall(chunk)
-    if not ok or type(result) ~= "number" then
-        return nil
-    end
-    return result
-end
-
--- Detect if expression requires tokenization (has operators needing special handling)
-local function needsTokenization(expr)
-    -- Check for operators requiring tokenization
-    -- % and ^ operators need tokenization for proper precedence handling
-    return expr:match("%%") or expr:match("%^")
-end
 
 function Arithmetic.isCandidate(content, opts)
     if not content or content == "" then return false end
@@ -294,28 +277,9 @@ function Arithmetic.process(content, opts)
     local displayInput = strings.trim(normalized)
     local cleaned = normalizeExpressionNumbers(removeCurrencyAndWhitespace(normalized), opts)
 
-    local result
-    -- Smart path selection: use tokenization directly for complex operators
-    if needsTokenization(cleaned) then
-        -- Use tokenization for expressions with % or ^ operators
-        if cleaned:match("[%(%)]") then
-            -- Parentheses with complex operators: tokenization doesn't support them
-            return nil
-        end
-        local tokens = tokenizeExpression(cleaned)
-        result = evaluateTokens(tokens)
-    else
-        -- Use fast load() path for simple expressions
-        result = select(1, evaluateEquation(cleaned))
-        if result == nil then
-            -- Fallback to tokenization if load() fails and no parentheses
-            if cleaned:match("[%(%)]") then
-                return nil
-            end
-            local tokens = tokenizeExpression(cleaned)
-            result = evaluateTokens(tokens)
-        end
-    end
+    -- Use tokenizer for all expressions (now supports parentheses)
+    local tokens = tokenizeExpression(cleaned)
+    local result = evaluateTokens(tokens)
 
     if not result then
         return nil
