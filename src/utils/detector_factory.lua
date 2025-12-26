@@ -115,6 +115,35 @@ function DetectorFactory.create(config)
     -- Inject declared dependencies
     local injected, hasDeclaredDeps = injectDependencies(config, config.deps)
 
+    -- Validate pattern dependencies if declared
+    if config.patternDependencies then
+        if type(config.patternDependencies) ~= "table" then
+            error("patternDependencies must be a table")
+        end
+
+        local patterns = config.deps and config.deps.patterns
+        if not patterns then
+            error("patterns must be provided in deps when patternDependencies are declared")
+        end
+
+        -- Support both patterns module (with .all() method) and pre-compiled patterns table
+        local allPatterns = patterns
+        if type(patterns.all) == "function" then
+            allPatterns = patterns.all()
+        elseif type(patterns) ~= "table" then
+            error("patterns must be a table or module with .all() method")
+        end
+
+        for _, patternName in ipairs(config.patternDependencies) do
+            if not allPatterns[patternName] then
+                error(string.format("Pattern '%s' not found in patterns registry", patternName))
+            end
+        end
+
+        -- Store pattern dependencies for later use
+        injected._patternDependencies = config.patternDependencies
+    end
+
     -- Return the standardized detector
     return {
         id = id,

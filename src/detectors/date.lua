@@ -7,6 +7,7 @@ return function(deps)
         id = "date_range",
         priority = 80,
         dependencies = {"patterns"},
+        patternDependencies = {"date_token", "date_token_iso", "date_token_text"},
         formatterKey = "date",
         defaultFormatter = defaultFormatter,
         requiredMethods = {"isRangeCandidate", "describeRange"}, -- date uses custom method names

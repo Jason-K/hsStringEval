@@ -7,6 +7,7 @@ return function(deps)
         id = "phone",
         priority = 50,
         dependencies = {"patterns"},
+        patternDependencies = {"phone_semicolon"},
         formatterKey = "phone",
         defaultFormatter = defaultFormatter,
         requiredMethods = {"isCandidate", "format"}, -- phone uses "format" instead of "process"

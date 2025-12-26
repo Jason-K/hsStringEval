@@ -7,6 +7,7 @@ return function(deps)
         id = "arithmetic",
         priority = 100,
         dependencies = {"patterns"},
+        patternDependencies = {"arithmetic_candidate", "date_full", "localized_number"},
         formatterKey = "arithmetic",
         defaultFormatter = defaultFormatter,
         deps = deps,
