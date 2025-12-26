@@ -35,7 +35,7 @@ This is a refactored Hammerspoon spoon for clipboard formatting with a modular a
 - Modular pattern detection system via registry pattern
 - Each detector created via `detector_factory.create()` with dependency injection
 - Detectors can optionally declare `dependencies` array (e.g., `{"logger", "config", "formatters"}`)
-- Built-in detectors: arithmetic, date ranges, PD conversions, combinations, phone numbers, navigation
+- Built-in detectors: arithmetic (with percentage calculations), date ranges, PD conversions, combinations, phone numbers, navigation, time calculations, unit conversions
 - Detectors return `{ formatted, matchedId, rawResult, sideEffect }`
 
 **Formatters (`src/formatters/`)**
@@ -68,7 +68,7 @@ This is a refactored Hammerspoon spoon for clipboard formatting with a modular a
 
 **Pattern Caching**: Unified `patterns.lua` provides LRU cache with memory pressure monitoring; configurable via `patterns.configure({maxCacheSize, memoryThresholdMB, autoCleanup})`
 
-**Seed Processing**: The `formatSeed` methods extract expressions after `=`, `:`, or whitespace boundaries for use with Karabiner integration
+**Seed Processing**: The `formatSeed` methods extract expressions using the `seed_strategies` module with strategy pattern, supporting date ranges, arithmetic expressions, separator-based extraction, and whitespace splitting for Karabiner integration
 
 **Selection Handling**: `selection_modular.lua` uses strategy pattern with multiple fallback methods (accessibility API → menu copy → eventtap keystroke) for acquiring selected text
 
