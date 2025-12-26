@@ -40,6 +40,7 @@ local detectorConstructors = {
     requireFromRoot("detectors.combinations"),
     requireFromRoot("detectors.phone"),
     requireFromRoot("detectors.navigation"),
+    requireFromRoot("detectors.units"),
 }
 
 function obj:init(opts)
