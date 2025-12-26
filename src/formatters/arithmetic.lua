@@ -246,6 +246,29 @@ local function evaluateTokens(tokens)
 end
 
 
+-- Transform percentage expressions to standard arithmetic
+local function transformPercentageExpressions(expr)
+    -- Transform "X%ofY" or "X% of Y" → "X / 100 * Y"
+    local percentOf, value = expr:match("^(%d+)%%%s*of%s*([%d%.,]+)$")
+    if percentOf and value then
+        return string.format("%s / 100 * %s", percentOf, value)
+    end
+
+    -- Transform "Y + X%" → "Y * (1 + X/100)"
+    local base, addPercent = expr:match("^([%d%.,]+)%s*%+%s*(%d+)%%$")
+    if base and addPercent then
+        return string.format("%s * (1 + %s / 100)", base, addPercent)
+    end
+
+    -- Transform "Y - X%" → "Y * (1 - X/100)"
+    local subBase, subPercent = expr:match("^([%d%.,]+)%s*%-%s*(%d+)%%$")
+    if subBase and subPercent then
+        return string.format("%s * (1 - %s / 100)", subBase, subPercent)
+    end
+
+    return expr
+end
+
 function Arithmetic.isCandidate(content, opts)
     if not content or content == "" then return false end
     local normalized = strings.normalizeMinus(content)
@@ -255,6 +278,13 @@ function Arithmetic.isCandidate(content, opts)
     if datePattern and datePattern.match(trimmed) == trimmed then
         return false
     end
+
+    -- Check if this is a percentage expression with "of" (e.g., "15% of 24000")
+    local percentOfMatch = trimmed:match("^%d+%%%s*of%s*[%d%.,]+$")
+    if percentOfMatch then
+        return true
+    end
+
     local arithmeticPattern = getPatternEntry(opts, "arithmetic_candidate")
     if arithmeticPattern and arithmeticPattern.match(trimmed) == nil then
         return false
@@ -276,6 +306,7 @@ function Arithmetic.process(content, opts)
     local normalized = strings.normalizeMinus(content)
     local displayInput = strings.trim(normalized)
     local cleaned = normalizeExpressionNumbers(removeCurrencyAndWhitespace(normalized), opts)
+    cleaned = transformPercentageExpressions(cleaned)
 
     -- Use tokenizer for all expressions (now supports parentheses)
     local tokens = tokenizeExpression(cleaned)

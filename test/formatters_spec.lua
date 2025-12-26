@@ -146,4 +146,28 @@ describe("formatters", function()
         }
         assert.is_false(phone.isCandidate("5551234567;note", { patterns = blockingPatterns }))
     end)
+
+    describe("percentage arithmetic", function()
+        local Arithmetic = require("src.formatters.arithmetic")
+
+        it("calculates 15% of 24000", function()
+            local result = Arithmetic.process("15% of 24000", {})
+            assert.are_equal(3600, tonumber(result))
+        end)
+
+        it("calculates 24000 + 15%", function()
+            local result = Arithmetic.process("24000 + 15%", {})
+            assert.are_equal(27600, tonumber(result))
+        end)
+
+        it("calculates 24000 - 25%", function()
+            local result = Arithmetic.process("24000 - 25%", {})
+            assert.are_equal(18000, tonumber(result))
+        end)
+
+        it("handles currency with percentage", function()
+            local result = Arithmetic.process("$24000 - 15%", {})
+            assert.are_equal("$20,400.00", result)
+        end)
+    end)
 end)
