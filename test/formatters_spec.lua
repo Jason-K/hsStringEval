@@ -61,6 +61,30 @@ describe("formatters", function()
         assert.is_nil(arithmetic.process("1+1", { patterns = blockingPatterns }))
     end)
 
+    describe("arithmetic tokenizer with parentheses", function()
+        local Arithmetic = require("src.formatters.arithmetic")
+
+        it("evaluates (2+3)*4 correctly", function()
+            local result = Arithmetic.process("(2+3)*4")
+            assert.equal(20, tonumber(result))
+        end)
+
+        it("evaluates 2*(3+4) correctly", function()
+            local result = Arithmetic.process("2*(3+4)")
+            assert.equal(14, tonumber(result))
+        end)
+
+        it("evaluates (2+3)*(4+5) correctly", function()
+            local result = Arithmetic.process("(2+3)*(4+5)")
+            assert.equal(45, tonumber(result))
+        end)
+
+        it("evaluates nested parentheses (2*(3+4))", function()
+            local result = Arithmetic.process("(2*(3+4))")
+            assert.equal(14, tonumber(result))
+        end)
+    end)
+
     it("describes date ranges", function()
         local dateFormatter = helper.requireFresh("formatters.date")
         assert.is_true(dateFormatter.isRangeCandidate("5/6/23 to 6/14/23"))

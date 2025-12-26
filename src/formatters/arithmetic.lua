@@ -83,6 +83,31 @@ local function tokenizeExpression(equation)
         if char:match("[%d%.]") then
             currentNum = currentNum .. char
             lastWasOperator = false
+        elseif char == "(" then
+            -- Flush pending number before opening paren
+            if currentNum ~= "" then
+                local numeric = tonumber(currentNum)
+                if numeric then
+                    table.insert(tokens, tostring(numeric * (isNegative and -1 or 1)))
+                end
+                currentNum = ""
+                isNegative = false
+            end
+            table.insert(tokens, "*")  -- Implicit multiplication
+            table.insert(tokens, char)
+            lastWasOperator = true
+        elseif char == ")" then
+            -- Flush pending number before closing paren
+            if currentNum ~= "" then
+                local numeric = tonumber(currentNum)
+                if numeric then
+                    table.insert(tokens, tostring(numeric * (isNegative and -1 or 1)))
+                end
+                currentNum = ""
+                isNegative = false
+            end
+            table.insert(tokens, char)
+            lastWasOperator = false
         elseif char == "+" or char == "-" or char == "*" or char == "/" or char == "%" or char == "^" then
             if char == "-" and lastWasOperator then
                 isNegative = not isNegative
@@ -143,6 +168,15 @@ local function evaluateTokens(tokens)
         local number = tonumber(token)
         if number ~= nil then
             table.insert(output, number)
+        elseif token == "(" then
+            table.insert(stack, token)
+        elseif token == ")" then
+            while #stack > 0 and stack[#stack] ~= "(" do
+                table.insert(output, table.remove(stack))
+            end
+            if #stack > 0 and stack[#stack] == "(" then
+                table.remove(stack)
+            end
         elseif isOperator(token) then
             while true do
                 local top = stack[#stack]
@@ -151,9 +185,8 @@ local function evaluateTokens(tokens)
                 end
                 local currentPrecedence = precedence[token] or 0
                 local topPrecedence = precedence[top] or 0
-                local shouldPop
                 local isRightAssociative = rightAssociative[token] == true
-                shouldPop = currentPrecedence < topPrecedence
+                local shouldPop = currentPrecedence < topPrecedence
                     or (not isRightAssociative and currentPrecedence == topPrecedence)
                 if shouldPop then
                     table.insert(output, table.remove(stack))
