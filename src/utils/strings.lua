@@ -18,6 +18,10 @@ EXAMPLE USAGE:
     local parts = Strings.split("a,b,c", ",")
     -- parts is now {"a", "b", "c"}
 ]]
+
+-- Get package root for module loading (works in both test and Hammerspoon environments)
+local pkgRoot = (...):match("^(.*)%.utils%.strings$")
+
 local M = {}
 
 -- PUBLIC METHOD: Trim leading and trailing whitespace from a string.
@@ -105,96 +109,26 @@ function M.normalizeMinus(str)
 end
 
 -- PUBLIC METHOD: Extract a potential "seed" for an expression from a string.
--- The seed is the part of the string that is most likely to be an evaluatable
--- expression. This is determined by looking for common separators like '=', ':',
--- or brackets, or falling back to the last word.
+-- Delegates to seed_strategies module for modular extraction logic.
 -- @param str string The input string.
+-- @param table context (optional) Context object with dependencies (patterns, etc.)
 -- @return string The prefix before the seed.
 -- @return string The extracted seed.
 -- Example: M.extractSeed("Total: 10+5") → "Total: ", "10+5"
-function M.extractSeed(str)
-    -- GUARD: Handle nil or empty string input.
-    if not str or str == "" then
-        return "", ""
-    end
+function M.extractSeed(str, context)
+    local ok, seedStrategies = pcall(function()
+        return require(pkgRoot .. ".utils.seed_strategies")
+    end)
 
-    -- Strip trailing whitespace (including newlines) before pattern matching.
-    -- This ensures patterns that use $ (end-of-string anchor) work correctly.
-    -- Trailing whitespace is typically a copy-paste artifact and not meaningful
-    -- for seed extraction purposes.
-    str = str:match("^(.-)%s*$") or str
-
-    -- STRATEGY: Look for the last whitespace-separated token that could be an expression.
-    -- This is more reliable than looking for separators like '[' which can appear in labels.
-
-    -- Try pure arithmetic FIRST (strings that are just arithmetic)
-    -- Include %s for internal whitespace in expressions like "5 + 3"
-    local arithmeticOnly = str:match("^([%d%.%s%(%)%+%-%*/%%^cC]+)$")
-    if arithmeticOnly and arithmeticOnly:match("[%d%(]") then
-        return "", arithmeticOnly
-    end
-
-    -- Then try to find arithmetic after a prefix
-    -- Look for the last whitespace before an arithmetic expression
-    -- Include 'c' and 'C' for combination operations like "12c11"
-    -- Include %s for internal whitespace in expressions like "5 + 3"
-    local beforeWs, ws, arith = str:match("^(.-)(%s+)([%d%.%s%(%)%+%-%*/%%^cC]+)$")
-    if arith and arith:match("[%d%(]") then
-        -- Found arithmetic at the end with leading whitespace - keep the space in prefix
-        return beforeWs .. ws, arith
-    end
-
-    -- Fallback: Look for common separators that precede an expression
-    -- We look for these followed by whitespace to avoid matching parts of words.
-    local separators = { "=%s", ":%s", "%(", "%[", "{" }
-    local lastSepPos = 0
-
-    -- STEP: Find the last occurrence of any separator.
-    for _, sep in ipairs(separators) do
-        local searchPos = 1
-        while true do
-            -- ACTION: Find the next occurrence of the separator.
-            local pos = str:find(sep, searchPos)
-            if not pos then
-                break
-            end
-            -- ACTION: Find the start of the content after the separator.
-            local afterSep = str:find("[^%s]", pos + 1)
-            if afterSep and afterSep - 1 > lastSepPos then
-                -- REGISTER: Update the position of the last separator found.
-                lastSepPos = afterSep - 1
-            end
-            -- STEP: Continue searching from the next position.
-            searchPos = pos + 1
+    if not ok then
+        -- Fallback to simple logic if module unavailable
+        if not str or str == "" then
+            return "", ""
         end
+        return "", str
     end
 
-    -- CASE: A separator was found.
-    if lastSepPos > 0 then
-        -- PROCESS: Split the string at the separator position.
-        local prefix = str:sub(1, lastSepPos)
-        local seed = str:sub(lastSepPos + 1)
-        return prefix, seed
-    end
-
-    -- CASE: No separator found, look for the last whitespace.
-    local lastWhitespace = 0
-    for i = 1, #str do
-        if str:sub(i, i):match("%s") then
-            lastWhitespace = i
-        end
-    end
-
-    -- CASE: Whitespace was found.
-    if lastWhitespace > 0 then
-        -- PROCESS: Split the string at the last whitespace position.
-        local prefix = str:sub(1, lastWhitespace)
-        local seed = str:sub(lastWhitespace + 1)
-        return prefix, seed
-    end
-
-    -- CASE: No whitespace found, the entire string is the seed.
-    return "", str
+    return seedStrategies.extractSeed(str, context)
 end
 
 return M
