@@ -91,21 +91,87 @@ function M.date_range_strategy(str, context)
 end
 
 -- STRATEGY: Extract arithmetic expressions (pure or after prefix)
+-- Extended to support time/date calculations (e.g., "12:00 AM + 13 hours", "12/16/25 + 1 day")
 function M.arithmetic_strategy(str)
     if not str or str == "" then
         return nil
     end
 
-    -- Try pure arithmetic first
-    local arithmeticOnly = str:match("^([%d%.%s%(%)%+%-%*/%%^cC]+)$")
-    if arithmeticOnly and arithmeticOnly:match("[%d%(]") then
-        return "", arithmeticOnly
+    -- Extended character set for arithmetic + time/date expressions:
+    -- - Digits, decimal: 0-9 .
+    -- - Whitespace: %s
+    -- - Operators: () + - * / % ^ c C
+    -- - Time: : (colon)
+    -- - Date: / (slash)
+    -- - All letters (for "hours", "minutes", "day", "AM/PM", "now", "today", etc.): %a
+    local exprChars = "[%d%.%s%(%)%+%-%*/%%^cC:/%a]"
+
+    -- Pattern 1: "Word: expr" - prefix ending with : followed by arithmetic
+    -- This handles "Total: 100 * 2" but not "12:00 AM + 13 hours" (starts with digit)
+    local prefix, seed = str:match("^(%a[^:]-:%s+)(" .. exprChars .. "+)$")
+    if seed and seed:match("[%d%(]") then
+        return prefix, seed
     end
 
-    -- Try arithmetic after whitespace
-    local beforeWs, ws, arith = str:match("^(.-)(%s+)([%d%.%s%(%)%+%-%*/%%^cC]+)$")
-    if arith and arith:match("[%d%(]") then
-        return beforeWs .. ws, arith
+    -- Pattern 1b: "Word expr" - any word prefix followed by time/date expression
+    -- This handles "testing 12AM + 13 hours" where "testing " is the prefix
+    local prefixB, seedB = str:match("^(%a+%s+)(" .. exprChars .. "+)$")
+    if prefixB and seedB and seedB:match("^[%d%:]") then
+        -- Check if the seed starts with a time/date pattern (digit or colon)
+        -- Also verify it contains an operator to avoid matching simple numbers
+        if seedB:match("[+-]") and (seedB:match("^%d") or seedB:match("^%d+:%d+")) then
+            return prefixB, seedB
+        end
+    end
+
+    -- Pattern 2: "anything today/Today/TODAY expr" - need to differentiate:
+    --   - "today + 1 day" (date calc) → keep "today" in seed
+    --   - "today 12AM + 13 hours" (time calc) → "today" is prefix
+    -- Use case-insensitive matching
+    local lowerStr = str:lower()
+    local prefixT, seedT = str:match("^(.-)([Tt][Oo][Dd][Aa][Yy]%s*" .. exprChars .. "+)$")
+    if prefixT and seedT then
+        local afterToday = seedT:match("^[Tt][Oo][Dd][Aa][Yy]%s*(.*)$")
+        -- If "today" is followed immediately by operator (with optional whitespace), it's a date calc
+        if afterToday and afterToday:match("^%s*[+-]") then
+            -- Date calculation: keep "today" in seed
+            return prefixT, seedT
+        -- If "today" is followed by a time expression (starts with digit), it's a time calc
+        elseif afterToday and (afterToday:match("^%s*%d") or afterToday:match("^%s*%d+:%d+") or afterToday:match("^%s*%d+[apAP]")) then
+            -- Time calculation: "today" is prefix, rest is seed
+            return prefixT .. seedT:match("^[Tt][Oo][Dd][Aa][Yy]%s+"), afterToday:match("^%s*(.*)$")
+        end
+    end
+
+    -- Pattern 3: "anything now/Now/NOW expr" - similar logic as "today"
+    local prefixN, seedN = str:match("^(.-)([Nn][Oo][Ww]%s*" .. exprChars .. "+)$")
+    if prefixN and seedN then
+        local afterNow = seedN:match("^[Nn][Oo][Ww]%s*(.*)$")
+        -- If "now" is followed immediately by operator, it's a date calc
+        if afterNow and afterNow:match("^%s*[+-]") then
+            -- Date calculation: keep "now" in seed
+            return prefixN, seedN
+        -- If "now" is followed by a time expression, it's a time calc
+        elseif afterNow and (afterNow:match("^%s*%d") or afterNow:match("^%s*%d+:%d+") or afterNow:match("^%s*%d+[apAP]")) then
+            -- Time calculation: "now" is prefix, rest is seed
+            return prefixN .. seedN:match("^[Nn][Oo][Ww]%s+"), afterNow:match("^%s*(.*)$")
+        end
+    end
+
+    -- Pattern 4: Pure arithmetic/time/date (entire string matches)
+    -- Must start with specific patterns: digit, operator, (, ), time keywords, etc.
+    -- This prevents matching arbitrary text like "line1\n15/3"
+    local function isValidStart(s)
+        local sLower = s:lower()
+        return s:match("^[%d%(%)%+%-*/%%^cC:.]")  -- starts with digit, operator, (, ), ., :, :
+            or sLower:match("^now%s*[+-]")
+            or sLower:match("^today%s*[+-]")
+            or s:match("^%d+[:/]")  -- starts with time like "12:" or date like "12/"
+    end
+
+    local arithmeticOnly = str:match("^" .. exprChars .. "+$")
+    if arithmeticOnly and arithmeticOnly:match("[%d%(]") and isValidStart(str) then
+        return "", arithmeticOnly
     end
 
     return nil
