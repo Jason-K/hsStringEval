@@ -73,16 +73,27 @@ local function runTask(executable, args, logger)
     return true
 end
 
-local function openInQSpace(path, logger)
+local function openInFinder(path, logger, config)
     local expanded = expandPath(path)
-    local ok, err = runTask("/usr/bin/open", { "-a", "QSpace Pro", expanded }, logger)
+    -- Determine which file manager app to use
+    local finderApp = "Bloom"
+    if config then
+        local finderSettings = config.finderReplacement or {}
+        local defaultFinder = finderSettings.default or "bloom"
+        if defaultFinder == "qspace" then
+            finderApp = "QSpace Pro"
+        end
+    end
+
+    local ok, err = runTask("/usr/bin/open", { "-a", finderApp, expanded }, logger)
     if not ok then
         return false, err
     end
     return true, {
-        type = "qspace",
+        type = "finder",
+        app = finderApp,
         path = expanded,
-        message = "Opened in QSpace",
+        message = "Opened in " .. finderApp,
     }
 end
 
@@ -184,7 +195,8 @@ return function(deps)
             local logger = deps.logger or (context and context.logger)
 
             if isLocalPath(trimmed) then
-                local ok, meta = openInQSpace(trimmed, logger)
+                local config = deps.config or (context and context.config)
+                local ok, meta = openInFinder(trimmed, logger, config)
                 if ok then
                     context.__lastSideEffect = meta
                     context.__handledByNavigation = true

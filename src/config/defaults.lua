@@ -9,6 +9,9 @@ return {
         includeTimestamp = true,
     },
     restoreClipboard = true,
+    finderReplacement = {
+        default = "bloom",
+    },
     processing = {
         throttleMs = constants.TIME.THROTTLE_DEFAULT,
     },
