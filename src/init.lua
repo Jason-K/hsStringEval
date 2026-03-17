@@ -282,7 +282,7 @@ end
 
 --- ClipboardFormatter:installHotkeyHelpers() -> table
 --- Method
---- Install global helper functions (FormatClip, FormatClipSeed, FormatCutSeed, FormatSelected) for use with Karabiner or direct hotkey bindings
+--- Install global helper functions (FormatClip, FormatClipSeed, FormatCutSeed, FormatSelection) for use with Karabiner or direct hotkey bindings
 ---
 --- Parameters:
 ---  * None

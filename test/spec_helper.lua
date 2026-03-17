@@ -167,7 +167,7 @@ local function resetHs()
     clipboardState.find = ""
     clipboardState.selection = nil
     _G.FormatClip = nil
-    _G.FormatSelected = nil
+    _G.FormatSelection = nil
 end
 
 resetHs()

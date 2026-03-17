@@ -25,9 +25,9 @@ local helperHotkeys = {
         end
         return self:formatSelectionSeed()
     end,
-    FormatSelected = function(self)
+    FormatSelection = function(self)
         if self.logger and self.logger.d then
-            self.logger.d("FormatSelected wrapper called")
+            self.logger.d("FormatSelection wrapper called")
         end
         return self:formatSelection()
     end,

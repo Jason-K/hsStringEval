@@ -121,7 +121,7 @@ ClipboardFormatter:bindHotkeys({
   revert to plain text output.
 - **Hotkey Helpers:** When `hotkeys.installHelpers = true`, the spoon installs
     global `FormatClip()`, `FormatClipSeed()`, `FormatCutSeed()`, and
-    `FormatSelected()` functions for legacy bindings
+    `FormatSelection()` functions for legacy bindings
   (remove them later with `removeHotkeyHelpers()`).
 - **Hooks & Formatters:** Use `hooks.formatters` to register or override
   formatter modules before detectors run, enabling custom renderers or template

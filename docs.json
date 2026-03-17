@@ -1,103 +1,100 @@
 [
   {
-    "name": "ClipboardFormatter",
-    "type": "Module",
-    "desc": "ClipboardFormatter spoon API",
     "items": [
       {
-        "doc": "Initialise the spoon, load configuration, register detectors, and optionally install hotkey helpers\n\nParameters:\n * opts - Optional table with keys:\n   * config - Table of configuration overrides (see docs/configuration.md)\n   * hooks - Hook table or function applied after initialisation\n   * hooksFile - Path to a Lua file that returns a hooks table\n\nReturns:\n * The ClipboardFormatter instance (self)",
         "type": "Method",
-        "def": "ClipboardFormatter:init(opts) -> self"
+        "def": "ClipboardFormatter:init(opts) -> self",
+        "doc": "Initialise the spoon, load configuration, register detectors, and optionally install hotkey helpers\n\nParameters:\n * opts - Optional table with keys:\n   * config - Table of configuration overrides (see docs/configuration.md)\n   * hooks - Hook table or function applied after initialisation\n   * hooksFile - Path to a Lua file that returns a hooks table\n\nReturns:\n * The ClipboardFormatter instance (self)"
       },
       {
-        "doc": "Load the PD (Permanent Disability) percentage-to-weeks mapping from disk\n\nParameters:\n * customPath - Optional absolute path to a mapping file. Tried first; falls back to bundled and configured paths\n\nReturns:\n * Table mapping percentage integers to week values",
         "type": "Method",
-        "def": "ClipboardFormatter:loadPDMapping([customPath]) -> table"
+        "def": "ClipboardFormatter:loadPDMapping([customPath]) -> table",
+        "doc": "Load the PD (Permanent Disability) percentage-to-weeks mapping from disk\n\nParameters:\n * customPath - Optional absolute path to a mapping file. Tried first; falls back to bundled and configured paths\n\nReturns:\n * Table mapping percentage integers to week values"
       },
       {
-        "doc": "Reload the PD mapping, clearing the cache first\n\nParameters:\n * path - Optional path to reload from. Defaults to the last successfully loaded path\n\nReturns:\n * Table mapping percentage integers to week values",
         "type": "Method",
-        "def": "ClipboardFormatter:reloadPDMapping([path]) -> table"
+        "def": "ClipboardFormatter:reloadPDMapping([path]) -> table",
+        "doc": "Reload the PD mapping, clearing the cache first\n\nParameters:\n * path - Optional path to reload from. Defaults to the last successfully loaded path\n\nReturns:\n * Table mapping percentage integers to week values"
       },
       {
-        "doc": "Return the current primary pasteboard contents\n\nParameters:\n * None\n\nReturns:\n * A string with the clipboard contents, or nil if empty",
         "type": "Method",
-        "def": "ClipboardFormatter:getClipboardContent() -> string or nil"
+        "def": "ClipboardFormatter:getClipboardContent() -> string or nil",
+        "doc": "Return the current primary pasteboard contents\n\nParameters:\n * None\n\nReturns:\n * A string with the clipboard contents, or nil if empty"
       },
       {
-        "doc": "Run content through the detector registry and return the formatted result\n\nParameters:\n * content - String to evaluate\n\nReturns:\n * Formatted string if a detector matched, or nil",
         "type": "Method",
-        "def": "ClipboardFormatter:processClipboard(content) -> string or nil"
+        "def": "ClipboardFormatter:processClipboard(content) -> string or nil",
+        "doc": "Run content through the detector registry and return the formatted result\n\nParameters:\n * content - String to evaluate\n\nReturns:\n * Formatted string if a detector matched, or nil"
       },
       {
-        "doc": "Add a custom detector to the registry\n\nParameters:\n * detector - Table with at least an `id` string and a `match(self, text[, context])` function\n\nReturns:\n * The detector table that was registered",
         "type": "Method",
-        "def": "ClipboardFormatter:registerDetector(detector) -> detector"
+        "def": "ClipboardFormatter:registerDetector(detector) -> detector",
+        "doc": "Add a custom detector to the registry\n\nParameters:\n * detector - Table with at least an `id` string and a `match(self, text[, context])` function\n\nReturns:\n * The detector table that was registered"
       },
       {
-        "doc": "Register or replace a formatter module accessible to detectors via context.formatters\n\nParameters:\n * id - Non-empty string key for the formatter (e.g. \"arithmetic\")\n * formatter - Any value; conventionally a table with a `process` function\n\nReturns:\n * The formatter value that was stored",
         "type": "Method",
-        "def": "ClipboardFormatter:registerFormatter(id, formatter) -> formatter"
+        "def": "ClipboardFormatter:registerFormatter(id, formatter) -> formatter",
+        "doc": "Register or replace a formatter module accessible to detectors via context.formatters\n\nParameters:\n * id - Non-empty string key for the formatter (e.g. \"arithmetic\")\n * formatter - Any value; conventionally a table with a `process` function\n\nReturns:\n * The formatter value that was stored"
       },
       {
-        "doc": "Retrieve a registered formatter by id\n\nParameters:\n * id - The formatter key passed to registerFormatter\n\nReturns:\n * The formatter value, or nil if not found",
         "type": "Method",
-        "def": "ClipboardFormatter:getFormatter(id) -> any or nil"
+        "def": "ClipboardFormatter:getFormatter(id) -> any or nil",
+        "doc": "Retrieve a registered formatter by id\n\nParameters:\n * id - The formatter key passed to registerFormatter\n\nReturns:\n * The formatter value, or nil if not found"
       },
       {
-        "doc": "Change the active log level at runtime without reloading the spoon\n\nParameters:\n * level - One of \"debug\", \"info\", \"warning\", \"error\"\n\nReturns:\n * None",
         "type": "Method",
-        "def": "ClipboardFormatter:setLogLevel(level)"
+        "def": "ClipboardFormatter:setLogLevel(level)",
+        "doc": "Change the active log level at runtime without reloading the spoon\n\nParameters:\n * level - One of \"debug\", \"info\", \"warning\", \"error\"\n\nReturns:\n * None"
       },
       {
-        "doc": "Apply a hook table or function to the spoon instance after initialisation\n\nParameters:\n * hooks - A function called with `self`, or a table with optional keys `formatters` and `detectors` (each a function called with `self`)\n\nReturns:\n * None",
         "type": "Method",
-        "def": "ClipboardFormatter:applyHooks(hooks)"
+        "def": "ClipboardFormatter:applyHooks(hooks)",
+        "doc": "Apply a hook table or function to the spoon instance after initialisation\n\nParameters:\n * hooks - A function called with `self`, or a table with optional keys `formatters` and `detectors` (each a function called with `self`)\n\nReturns:\n * None"
       },
       {
-        "doc": "Load a hooks table from a Lua file and apply it to the spoon instance\n\nParameters:\n * path - Absolute path to a Lua file that returns a hooks table\n\nReturns:\n * None",
         "type": "Method",
-        "def": "ClipboardFormatter:loadHooksFromFile(path)"
+        "def": "ClipboardFormatter:loadHooksFromFile(path)",
+        "doc": "Load a hooks table from a Lua file and apply it to the spoon instance\n\nParameters:\n * path - Absolute path to a Lua file that returns a hooks table\n\nReturns:\n * None"
       },
       {
-        "doc": "Install global helper functions (FormatClip, FormatClipSeed, FormatCutSeed, FormatSelected) for use with Karabiner or direct hotkey bindings\n\nParameters:\n * None\n\nReturns:\n * Table of installed helper functions keyed by name",
         "type": "Method",
-        "def": "ClipboardFormatter:installHotkeyHelpers() -> table"
+        "def": "ClipboardFormatter:installHotkeyHelpers() -> table",
+        "doc": "Install global helper functions (FormatClip, FormatClipSeed, FormatCutSeed, FormatSelection) for use with Karabiner or direct hotkey bindings\n\nParameters:\n * None\n\nReturns:\n * Table of installed helper functions keyed by name"
       },
       {
-        "doc": "Remove global helper functions previously installed by installHotkeyHelpers\n\nParameters:\n * None\n\nReturns:\n * None",
         "type": "Method",
-        "def": "ClipboardFormatter:removeHotkeyHelpers()"
+        "def": "ClipboardFormatter:removeHotkeyHelpers()",
+        "doc": "Remove global helper functions previously installed by installHotkeyHelpers\n\nParameters:\n * None\n\nReturns:\n * None"
       },
       {
-        "doc": "Bind hotkeys to spoon actions using the standard Hammerspoon hotkey mapping convention\n\nParameters:\n * mapping - Table with action name keys and {modifiers, key} values.\n   Supported actions: format, formatSeed, cutLineAndFormatSeed, formatSelection, formatSelectionSeed\n\nReturns:\n * None",
         "type": "Method",
-        "def": "ClipboardFormatter:bindHotkeys(mapping)"
+        "def": "ClipboardFormatter:bindHotkeys(mapping)",
+        "doc": "Bind hotkeys to spoon actions using the standard Hammerspoon hotkey mapping convention\n\nParameters:\n * mapping - Table with action name keys and {modifiers, key} values.\n   Supported actions: format, formatSeed, cutLineAndFormatSeed, formatSelection, formatSelectionSeed\n\nReturns:\n * None"
       },
       {
-        "doc": "Format the entire current clipboard through the detector registry and replace it with the result\n\nParameters:\n * None\n\nReturns:\n * true if the clipboard was changed, false otherwise",
         "type": "Method",
-        "def": "ClipboardFormatter:formatClipboardDirect() -> boolean"
+        "def": "ClipboardFormatter:formatClipboardDirect() -> boolean",
+        "doc": "Format the entire current clipboard through the detector registry and replace it with the result\n\nParameters:\n * None\n\nReturns:\n * true if the clipboard was changed, false otherwise"
       },
       {
-        "doc": "Extract the trailing expression (seed) from the clipboard, format it, and write prefix+result back\n\nParameters:\n * opts - Optional table. Set `autoPaste = true` to immediately paste after formatting\n\nReturns:\n * true if the clipboard was changed, false otherwise",
         "type": "Method",
-        "def": "ClipboardFormatter:formatClipboardSeed([opts]) -> boolean"
+        "def": "ClipboardFormatter:formatClipboardSeed([opts]) -> boolean",
+        "doc": "Extract the trailing expression (seed) from the clipboard, format it, and write prefix+result back\n\nParameters:\n * opts - Optional table. Set `autoPaste = true` to immediately paste after formatting\n\nReturns:\n * true if the clipboard was changed, false otherwise"
       },
       {
-        "doc": "Select-to-line-start, cut, evaluate the trailing seed, then paste the formatted result in-place\n\nParameters:\n * opts - Optional table of timing overrides\n\nReturns:\n * true if the line was changed, false otherwise",
         "type": "Method",
-        "def": "ClipboardFormatter:cutLineAndFormatSeed([opts]) -> boolean"
+        "def": "ClipboardFormatter:cutLineAndFormatSeed([opts]) -> boolean",
+        "doc": "Select-to-line-start, cut, evaluate the trailing seed, then paste the formatted result in-place\n\nParameters:\n * opts - Optional table of timing overrides\n\nReturns:\n * true if the line was changed, false otherwise"
       },
       {
-        "doc": "Capture the currently selected text, format it through the detector registry, and replace the selection\n\nParameters:\n * None\n\nReturns:\n * true if the selection was changed, false otherwise",
         "type": "Method",
-        "def": "ClipboardFormatter:formatSelection() -> boolean"
+        "def": "ClipboardFormatter:formatSelection() -> boolean",
+        "doc": "Capture the currently selected text, format it through the detector registry, and replace the selection\n\nParameters:\n * None\n\nReturns:\n * true if the selection was changed, false otherwise"
       },
       {
-        "doc": "Capture the currently selected text, extract and format only its trailing seed, then replace the selection\n\nParameters:\n * None\n\nReturns:\n * true if the selection was changed, false otherwise",
         "type": "Method",
-        "def": "ClipboardFormatter:formatSelectionSeed() -> boolean"
+        "def": "ClipboardFormatter:formatSelectionSeed() -> boolean",
+        "doc": "Capture the currently selected text, extract and format only its trailing seed, then replace the selection\n\nParameters:\n * None\n\nReturns:\n * true if the selection was changed, false otherwise"
       }
     ]
   }

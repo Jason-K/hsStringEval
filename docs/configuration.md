@@ -69,14 +69,14 @@ Behavior:
 ## Hotkeys (`config.hotkeys`)
 
 - `installHelpers` (boolean): When `true`, registers global helper functions
-  `FormatClip()`, `FormatClipSeed()`, and `FormatSelected()` that call the spoon's
+  `FormatClip()`, `FormatClipSeed()`, and `FormatSelection()` that call the spoon's
   clipboard and selection formatting routines. These helpers mirror the historical
   API for quick keybinding without manually wiring spoon instances. Set to `false`
   to avoid injecting globals (default).
   - `FormatClip()`: Formats the entire clipboard content
   - `FormatClipSeed()`: Extracts and formats only the seed expression at the end
   - `FormatCutSeed()`: Selects to BOL, cuts, formats the seed, and pastes (Karabiner-friendly)
-  - `FormatSelected()`: Formats the currently selected text
+  - `FormatSelection()`: Formats the currently selected text
 
 ## Hooks
 

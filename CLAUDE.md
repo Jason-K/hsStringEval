@@ -26,7 +26,7 @@ This is a refactored Hammerspoon spoon for clipboard formatting with a modular a
 **ClipboardFormatter Spoon (`src/init.lua`)**
 - Main spoon interface with detector/formatter registry
 - Three formatting modes: `format` (full clipboard), `formatSeed` (extract last expression), `formatSelection` (selected text)
-- Hotkey helpers: `FormatClip`, `FormatClipSeed`, `FormatCutSeed`, `FormatSelected`
+- Hotkey helpers: `FormatClip`, `FormatClipSeed`, `FormatCutSeed`, `FormatSelection`
 - Throttling mechanism to avoid redundant processing
 - Hook system for runtime extension
 - PD (Permanent Disability) mapping management with bundled/fallback file loading
