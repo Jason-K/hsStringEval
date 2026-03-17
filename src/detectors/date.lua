@@ -1,6 +1,6 @@
 local pkgRoot = (...):match("^(.*)%.detectors%.date$")
-local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
-local defaultFormatter = require(pkgRoot .. ".formatters.date")
+local DetectorFactory = require(pkgRoot and (pkgRoot .. ".utils.detector_factory") or "utils.detector_factory")
+local defaultFormatter = require(pkgRoot and (pkgRoot .. ".formatters.date") or "formatters.date")
 
 return function(deps)
     return DetectorFactory.create({

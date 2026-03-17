@@ -1,7 +1,7 @@
 local pkgRoot = (...):match("^(.*)%.formatters%.arithmetic$")
-local strings = require(pkgRoot .. ".utils.strings")
-local currency = require(pkgRoot .. ".formatters.currency")
-local patterns = require(pkgRoot .. ".utils.patterns")
+local strings = require(pkgRoot and (pkgRoot .. ".utils.strings") or "utils.strings")
+local currency = require(pkgRoot and (pkgRoot .. ".formatters.currency") or "formatters.currency")
+local patterns = require(pkgRoot and (pkgRoot .. ".utils.patterns") or "utils.patterns")
 
 local Arithmetic = {}
 

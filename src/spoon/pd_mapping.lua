@@ -3,13 +3,20 @@
 
 local M = {}
 
+local function requireFromInstance(instance, path)
+    if instance and type(instance._packageRoot) == "string" and instance._packageRoot ~= "" then
+        return require(instance._packageRoot .. "." .. path)
+    end
+    return require(path)
+end
+
 --- Load PD mapping from candidate paths
 -- Tries multiple paths in order: customPath, bundled, legacy, fallback
 -- @param instance The ClipboardFormatter spoon instance
 -- @param customPath Optional custom path to load from first
 -- @return The loaded PD mapping table
 function M.load(instance, customPath)
-    local pdCache = require((instance._packageRoot or "ClipboardFormatter.src") .. ".utils.pd_cache")
+    local pdCache = requireFromInstance(instance, "utils.pd_cache")
     local candidates = {}
 
     if customPath then
@@ -53,7 +60,7 @@ end
 -- @param path Optional path to reload from. If not provided, uses pdMappingPath
 -- @return The reloaded PD mapping table
 function M.reload(instance, path)
-    local pdCache = require((instance._packageRoot or "ClipboardFormatter.src") .. ".utils.pd_cache")
+    local pdCache = requireFromInstance(instance, "utils.pd_cache")
     local target = path or instance.pdMappingPath
     if not target then
         return M.load(instance, path)

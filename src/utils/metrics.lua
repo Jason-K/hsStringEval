@@ -22,7 +22,7 @@ EXAMPLE USAGE:
 ]]
 
 local pkgRoot = (...):match("^(.*)%.utils%.metrics$")
-local hsUtils = require(pkgRoot .. ".utils.hammerspoon")
+local hsUtils = require(pkgRoot and (pkgRoot .. ".utils.hammerspoon") or "utils.hammerspoon")
 
 -- Initialize random seed for sampling
 math.randomseed(os.time())

@@ -1,6 +1,6 @@
 local pkgRoot = (...):match("^(.*)%.formatters%.date$")
-local strings = require(pkgRoot .. ".utils.strings")
-local patterns = require(pkgRoot .. ".utils.patterns")
+local strings = require(pkgRoot and (pkgRoot .. ".utils.strings") or "utils.strings")
+local patterns = require(pkgRoot and (pkgRoot .. ".utils.patterns") or "utils.patterns")
 
 local Date = {}
 

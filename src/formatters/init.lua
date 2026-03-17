@@ -1,9 +1,11 @@
 -- Formatters module - exports all formatter modules
+local pkgRoot = (...):match("^(.*)%.formatters$")
+
 local M = {
-    arithmetic = require("ClipboardFormatter.src.formatters.arithmetic"),
-    currency = require("ClipboardFormatter.src.formatters.currency"),
-    date = require("ClipboardFormatter.src.formatters.date"),
-    phone = require("ClipboardFormatter.src.formatters.phone"),
+    arithmetic = require(pkgRoot and (pkgRoot .. ".formatters.arithmetic") or "formatters.arithmetic"),
+    currency = require(pkgRoot and (pkgRoot .. ".formatters.currency") or "formatters.currency"),
+    date = require(pkgRoot and (pkgRoot .. ".formatters.date") or "formatters.date"),
+    phone = require(pkgRoot and (pkgRoot .. ".formatters.phone") or "formatters.phone"),
 }
 
 return M

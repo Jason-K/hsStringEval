@@ -1,5 +1,5 @@
 local pkgRoot = (...):match("^(.*)%.detectors%.combinations$")
-local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
+local DetectorFactory = require(pkgRoot and (pkgRoot .. ".utils.detector_factory") or "utils.detector_factory")
 
 local function isCombinationCandidate(text)
     if not text or text == "" then return false end

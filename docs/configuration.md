@@ -75,6 +75,7 @@ Behavior:
   to avoid injecting globals (default).
   - `FormatClip()`: Formats the entire clipboard content
   - `FormatClipSeed()`: Extracts and formats only the seed expression at the end
+  - `FormatCutSeed()`: Selects to BOL, cuts, formats the seed, and pastes (Karabiner-friendly)
   - `FormatSelected()`: Formats the currently selected text
 
 ## Hooks

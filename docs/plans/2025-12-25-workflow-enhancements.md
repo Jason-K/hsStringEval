@@ -4,6 +4,8 @@
 
 **Goal:** Enhance ClipboardFormatter with time calculations, unit conversions, percentage arithmetic, and foundation refactoring to support inline text transformations without breaking user workflow.
 
+> **Status: Implemented.** All phases completed. `time_calc`, `units`, `seed_strategies`, `time_math`, and related refactoring are in `src/`. This document is preserved as a historical implementation record.
+
 **Architecture:** Modular detector system with strategy pattern for seed extraction, unified arithmetic evaluation, and new detectors for time math and unit conversions. All changes follow existing factory/registry patterns with dependency injection.
 
 **Tech Stack:** Lua 5.4, Hammerspoon, busted testing framework, existing detector_factory and registry patterns.

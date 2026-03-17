@@ -1,7 +1,7 @@
 local pkgRoot = (...):match("^(.*)%.detectors%.pd$")
-local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
-local defaultCurrency = require(pkgRoot .. ".formatters.currency")
-local constants = require(pkgRoot .. ".config.constants")
+local DetectorFactory = require(pkgRoot and (pkgRoot .. ".utils.detector_factory") or "utils.detector_factory")
+local defaultCurrency = require(pkgRoot and (pkgRoot .. ".formatters.currency") or "formatters.currency")
+local constants = require(pkgRoot and (pkgRoot .. ".config.constants") or "config.constants")
 
 return function(deps)
     return DetectorFactory.createCustom({

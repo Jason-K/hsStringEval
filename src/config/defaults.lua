@@ -1,5 +1,5 @@
 local pkgRoot = (...):match("^(.*)%.config%.defaults$")
-local constants = require(pkgRoot and (pkgRoot .. ".config.constants") or "ClipboardFormatter.src.config.constants")
+local constants = require(pkgRoot and (pkgRoot .. ".config.constants") or "config.constants")
 
 return {
     loggerLevel = "warning",

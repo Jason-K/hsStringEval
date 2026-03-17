@@ -1,6 +1,6 @@
 local pkgRoot = (...):match("^(.*)%.detectors%.units$")
-local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
-local unitFormatter = require(pkgRoot .. ".formatters.unit")
+local DetectorFactory = require(pkgRoot and (pkgRoot .. ".utils.detector_factory") or "utils.detector_factory")
+local unitFormatter = require(pkgRoot and (pkgRoot .. ".formatters.unit") or "formatters.unit")
 
 local function isConversionCandidate(text)
     if not text or text == "" then return false end

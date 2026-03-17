@@ -20,7 +20,7 @@ EXAMPLE USAGE:
 ]]
 
 local pkgRoot = (...):match("^(.*)%.undo%.manager$")
-local clipboardIO = require(pkgRoot .. ".clipboard.io")
+local clipboardIO = require(pkgRoot and (pkgRoot .. ".clipboard.io") or "clipboard.io")
 
 local UndoManager = {}
 

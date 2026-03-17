@@ -5,8 +5,8 @@ Validates user configuration against the schema.
 ]]
 
 local pkgRoot = (...):match("^(.*)%.config%.validator$")
-local schema = require(pkgRoot and (pkgRoot .. ".config.schema") or "ClipboardFormatter.src.config.schema")
-local config_accessor = require(pkgRoot and (pkgRoot .. ".utils.config_accessor") or "ClipboardFormatter.src.utils.config_accessor")
+local schema = require(pkgRoot and (pkgRoot .. ".config.schema") or "config.schema")
+local config_accessor = require(pkgRoot and (pkgRoot .. ".utils.config_accessor") or "utils.config_accessor")
 
 local M = {}
 

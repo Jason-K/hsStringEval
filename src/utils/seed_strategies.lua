@@ -16,7 +16,7 @@ local dateFormatter = nil
 local function getDateFormatter()
     if not dateFormatter then
         local ok, result = pcall(function()
-            return require(pkgRoot .. ".formatters.date")
+            return require(pkgRoot and (pkgRoot .. ".formatters.date") or "formatters.date")
         end)
         if ok then
             dateFormatter = result
@@ -48,7 +48,7 @@ function M.date_range_strategy(str, context)
     -- Get patterns from context or load directly
     local allPatterns = context and context.patterns
     if not allPatterns or not allPatterns.date_token then
-        local ok2, pm = pcall(require, pkgRoot .. ".utils.patterns")
+        local ok2, pm = pcall(require, pkgRoot and (pkgRoot .. ".utils.patterns") or "utils.patterns")
         if ok2 then
             allPatterns = pm.all()
         end

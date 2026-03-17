@@ -77,10 +77,10 @@ function M.bindHotkeys(instance, mapping)
 
     local spec = {
         format = hs.fnutils.partial(instance.formatClipboardDirect, instance),
-        -- New binding for seed-on-selection formatting
-        formatSelectionSeed = hs.fnutils.partial(instance.formatSelectionSeed, instance),
         formatSeed = hs.fnutils.partial(instance.formatClipboardSeed, instance),
+        cutLineAndFormatSeed = hs.fnutils.partial(instance.cutLineAndFormatSeed, instance),
         formatSelection = hs.fnutils.partial(instance.formatSelection, instance),
+        formatSelectionSeed = hs.fnutils.partial(instance.formatSelectionSeed, instance),
     }
     hs.spoons.bindHotkeysToSpec(spec, mapping)
 end

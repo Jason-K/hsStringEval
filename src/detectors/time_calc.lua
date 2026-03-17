@@ -1,6 +1,6 @@
 local pkgRoot = (...):match("^(.*)%.detectors%.time_calc$")
-local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
-local TimeMath = require(pkgRoot .. ".utils.time_math")
+local DetectorFactory = require(pkgRoot and (pkgRoot .. ".utils.detector_factory") or "utils.detector_factory")
+local TimeMath = require(pkgRoot and (pkgRoot .. ".utils.time_math") or "utils.time_math")
 
 local function isTimeCalcCandidate(text)
     if not text or text == "" then return false end

@@ -17,10 +17,11 @@ EXAMPLE USAGE:
 ]]
 
 local pkgRoot = (...):match("^(.*)%.clipboard%.selection_modular$")
-local clipboardIO = require(pkgRoot .. ".clipboard.io")
-local restore = require(pkgRoot .. ".clipboard.restore")
-local ClipboardOperations = require(pkgRoot .. ".utils.clipboard_operations")
-local constants = require(pkgRoot .. ".config.constants")
+local clipboardIO = require(pkgRoot and (pkgRoot .. ".clipboard.io") or "clipboard.io")
+local restore = require(pkgRoot and (pkgRoot .. ".clipboard.restore") or "clipboard.restore")
+local ClipboardOperations = require(pkgRoot and (pkgRoot .. ".utils.clipboard_operations") or
+"utils.clipboard_operations")
+local constants = require(pkgRoot and (pkgRoot .. ".config.constants") or "config.constants")
 
 local Selection = {}
 

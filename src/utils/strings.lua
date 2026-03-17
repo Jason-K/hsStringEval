@@ -117,7 +117,7 @@ end
 -- Example: M.extractSeed("Total: 10+5") → "Total: ", "10+5"
 function M.extractSeed(str, context)
     local ok, seedStrategies = pcall(function()
-        return require(pkgRoot .. ".utils.seed_strategies")
+        return require(pkgRoot and (pkgRoot .. ".utils.seed_strategies") or "utils.seed_strategies")
     end)
 
     if not ok then

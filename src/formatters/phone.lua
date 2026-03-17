@@ -1,7 +1,7 @@
 local Phone = {}
 
 local pkgRoot = (...):match("^(.*)%.formatters%.phone$")
-local patterns = require(pkgRoot .. ".utils.patterns")
+local patterns = require(pkgRoot and (pkgRoot .. ".utils.patterns") or "utils.patterns")
 
 local function getPatternEntry(opts, name)
     if opts and opts.patterns then

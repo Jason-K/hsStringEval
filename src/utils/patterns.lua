@@ -13,7 +13,7 @@ KEY CONCEPTS:
 - Backward Compatible: Maintains the original simple API
 
 EXAMPLE USAGE:
-    local patterns = require("src.utils.patterns")
+    local patterns = require("utils.patterns")
 
     -- Basic usage (backward compatible)
     local compiled = patterns.compiled("arithmetic_candidate")
@@ -154,7 +154,7 @@ end
 -- ============================================================================
 
 local pkgRoot = (...):match("^(.*)%.utils%.patterns$")
-local constants = require(pkgRoot and (pkgRoot .. ".config.constants") or "ClipboardFormatter.src.config.constants")
+local constants = require(pkgRoot and (pkgRoot .. ".config.constants") or "config.constants")
 
 local config = {
     maxCacheSize = constants.CACHE.PATTERN_MAX_SIZE,

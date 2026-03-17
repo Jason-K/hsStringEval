@@ -48,11 +48,13 @@ Each detector is created via `detector_factory.create()` with optional dependenc
 | Detector | Purpose |
 |----------|---------|
 | `arithmetic.lua` | Arithmetic expressions (`+`, `-`, `*`, `/`, `%`, `^`) |
-| `date.lua` | Date range detection and formatting |
-| `pd.lua` | Permanent Disability percentage-to-weeks conversions |
 | `combinations.lua` | Probability combination calculations |
-| `phone.lua` | Phone number detection and formatting |
+| `date.lua` | Date range detection and formatting |
 | `navigation.lua` | URL and file path navigation (side effects only) |
+| `pd.lua` | Permanent Disability percentage-to-weeks conversions |
+| `phone.lua` | Phone number detection and formatting |
+| `time_calc.lua` | Time and duration calculations (`9am + 2h`, `now + 30m`) |
+| `units.lua` | Unit conversions (`100km to mi`, `72F to C`) |
 
 ### `registry.lua`
 Central detector registry that processes input through all detectors in priority order. Supports early exit optimization.
@@ -72,16 +74,20 @@ Formatters provide reusable transformations used by detectors.
 
 | Module | Purpose |
 |--------|---------|
-| `detector_factory.lua` | Factory for creating detectors with dependency injection |
-| `strings.lua` | String manipulation utilities (trim, extractSeed, etc.) |
-| `patterns.lua` | Centralized pattern registry with LRU caching |
-| `logger.lua` | Structured logging with configurable levels |
-| `hammerspoon.lua` | Hammerspoon-specific utilities |
-| `pd_cache.lua` | PD mapping file loading and caching |
-| `error_handler.lua` | Safe error wrapping and logging |
-| `logging_wrapper.lua` | Null-safe logger wrappers |
-| `string_processing.lua` | Number localization, URL encoding, expression extraction |
+| `clipboard_operations.lua` | Clipboard read/write operation helpers |
 | `config_accessor.lua` | Safe nested config access with merging |
+| `detector_factory.lua` | Factory for creating detectors with dependency injection |
+| `error_handler.lua` | Safe error wrapping and logging |
+| `hammerspoon.lua` | Hammerspoon-specific utilities |
+| `logger.lua` | Structured logging with configurable levels |
+| `logging_wrapper.lua` | Null-safe logger wrappers |
+| `metrics.lua` | Performance and operation metrics tracking |
+| `patterns.lua` | Centralized pattern registry with LRU caching |
+| `pd_cache.lua` | PD mapping file loading and caching |
+| `seed_strategies.lua` | Strategy pattern for seed expression extraction |
+| `string_processing.lua` | Number localization, URL encoding, expression extraction |
+| `strings.lua` | String manipulation utilities (trim, extractSeed, etc.) |
+| `time_math.lua` | Time parsing and arithmetic utilities (used by `time_calc` detector) |
 | `validation.lua` | Reusable validation utilities |
 
 ## Spoon Internal Modules (`src/spoon/`)
@@ -136,7 +142,7 @@ end
 The `patterns` module provides automatic LRU caching with configurable memory management:
 
 ```lua
-local patterns = require("ClipboardFormatter.src.utils.patterns")
+local patterns = require("utils.patterns")
 patterns.configure({
     maxCacheSize = 100,
     memoryThresholdMB = 10,

@@ -106,8 +106,11 @@ ClipboardFormatter:init({
 })
 
 ClipboardFormatter:bindHotkeys({
-    format = { { "ctrl", "alt" }, "f" },
-    formatSelection = { { "ctrl", "alt" }, "s" },
+    format            = { { "ctrl", "alt" }, "f" },
+    formatSeed        = { { "ctrl", "alt" }, "g" },
+    cutLineAndFormatSeed = { { "ctrl", "alt" }, "x" },
+    formatSelection   = { { "ctrl", "alt" }, "s" },
+    formatSelectionSeed = { { "ctrl", "alt" }, "d" },
 })
 ```
 
@@ -117,7 +120,8 @@ ClipboardFormatter:bindHotkeys({
   `clipboardFormatter:setLogLevel("error")`, or set `structured = false` to
   revert to plain text output.
 - **Hotkey Helpers:** When `hotkeys.installHelpers = true`, the spoon installs
-  global `FormatClip()` and `FormatSelected()` functions for legacy bindings
+    global `FormatClip()`, `FormatClipSeed()`, `FormatCutSeed()`, and
+    `FormatSelected()` functions for legacy bindings
   (remove them later with `removeHotkeyHelpers()`).
 - **Hooks & Formatters:** Use `hooks.formatters` to register or override
   formatter modules before detectors run, enabling custom renderers or template

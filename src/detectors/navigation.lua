@@ -1,5 +1,5 @@
 local pkgRoot = (...):match("^(.*)%.detectors%.navigation$")
-local strings = require(pkgRoot .. ".utils.strings")
+local strings = require(pkgRoot and (pkgRoot .. ".utils.strings") or "utils.strings")
 
 local function hasHS()
     return type(hs) == "table"
@@ -166,7 +166,7 @@ local function looksLikeArithmetic(text)
     -- Include 'c' and 'C' for combination operations (e.g., "12c12")
     return withoutCurrency:match("^[%d%.%s%(%)%+%-%*/%%^cC]+$") ~= nil
 end
-local DetectorFactory = require(pkgRoot .. ".utils.detector_factory")
+local DetectorFactory = require(pkgRoot and (pkgRoot .. ".utils.detector_factory") or "utils.detector_factory")
 
 return function(deps)
     return DetectorFactory.createCustom({

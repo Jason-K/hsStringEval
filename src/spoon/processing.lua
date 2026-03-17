@@ -3,13 +3,20 @@
 
 local M = {}
 
+local function requireFromInstance(instance, path)
+    if instance and type(instance._packageRoot) == "string" and instance._packageRoot ~= "" then
+        return require(instance._packageRoot .. "." .. path)
+    end
+    return require(path)
+end
+
 --- Process clipboard content through detector registry with throttling
 -- @param instance The ClipboardFormatter spoon instance
 -- @param content The content to process
 -- @return formatted result, matched detector ID, raw result, side effect
 function M.process(instance, content)
-    local strings = require((instance._packageRoot or "ClipboardFormatter.src") .. ".utils.strings")
-    local hsUtils = require((instance._packageRoot or "ClipboardFormatter.src") .. ".utils.hammerspoon")
+    local strings = requireFromInstance(instance, "utils.strings")
+    local hsUtils = requireFromInstance(instance, "utils.hammerspoon")
     local trimmed = strings.trim(content)
     if trimmed == "" then
         return nil
@@ -54,7 +61,7 @@ end
 -- @param instance The ClipboardFormatter spoon instance
 -- @return true if formatting was applied, false otherwise
 function M.formatClipboardDirect(instance)
-    local clipboardIO = require((instance._packageRoot or "ClipboardFormatter.src") .. ".clipboard.io")
+    local clipboardIO = requireFromInstance(instance, "clipboard.io")
     local hs = _G.hs
 
     local clipboard = instance:getClipboardContent()
@@ -93,8 +100,8 @@ end
 -- @param opts Optional options table (e.g., autoPaste boolean)
 -- @return true if formatting was applied, false otherwise
 function M.formatClipboardSeed(instance, opts)
-    local strings = require((instance._packageRoot or "ClipboardFormatter.src") .. ".utils.strings")
-    local clipboardIO = require((instance._packageRoot or "ClipboardFormatter.src") .. ".clipboard.io")
+    local strings = requireFromInstance(instance, "utils.strings")
+    local clipboardIO = requireFromInstance(instance, "clipboard.io")
     local hs = _G.hs
 
     opts = opts or {}
@@ -167,9 +174,9 @@ end
 -- @param opts Optional options table
 -- @return true if formatting was applied, false otherwise
 function M.cutLineAndFormatSeed(instance, opts)
-    local strings = require((instance._packageRoot or "ClipboardFormatter.src") .. ".utils.strings")
-    local clipboardIO = require((instance._packageRoot or "ClipboardFormatter.src") .. ".clipboard.io")
-    local hsUtils = require((instance._packageRoot or "ClipboardFormatter.src") .. ".utils.hammerspoon")
+    local strings = requireFromInstance(instance, "utils.strings")
+    local clipboardIO = requireFromInstance(instance, "clipboard.io")
+    local hsUtils = requireFromInstance(instance, "utils.hammerspoon")
     local hs = _G.hs
 
     if type(hs) ~= "table" or not hs.eventtap then
@@ -333,7 +340,7 @@ end
 -- @param instance The ClipboardFormatter spoon instance
 -- @return true if formatting was applied, false otherwise
 function M.formatSelection(instance)
-    local selection = require((instance._packageRoot or "ClipboardFormatter.src") .. ".clipboard.selection_modular")
+    local selection = requireFromInstance(instance, "clipboard.selection_modular")
     local hs = _G.hs
 
     if instance.logger and instance.logger.d then
@@ -379,8 +386,8 @@ end
 -- @param instance The ClipboardFormatter spoon instance
 -- @return true if formatting was applied, false otherwise
 function M.formatSelectionSeed(instance)
-    local strings = require((instance._packageRoot or "ClipboardFormatter.src") .. ".utils.strings")
-    local selection = require((instance._packageRoot or "ClipboardFormatter.src") .. ".clipboard.selection_modular")
+    local strings = requireFromInstance(instance, "utils.strings")
+    local selection = requireFromInstance(instance, "clipboard.selection_modular")
     local hs = _G.hs
 
     if instance.logger and instance.logger.d then

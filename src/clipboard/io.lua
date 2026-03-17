@@ -1,5 +1,5 @@
 local pkgRoot = (...):match("^(.*)%.clipboard%.io$")
-local hsUtils = require(pkgRoot .. ".utils.hammerspoon")
+local hsUtils = require(pkgRoot and (pkgRoot .. ".utils.hammerspoon") or "utils.hammerspoon")
 
 local M = {}
 
