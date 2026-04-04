@@ -5,7 +5,7 @@ workflow for developing, testing, and deploying changes.
 
 ## Source of Truth
 
-Treat `~/Scripts/Metascripts/hsStringEval` as the canonical source for
+Treat `~/Scripts/apps/hammerspoon/hsStringEval` as the canonical source for
 ClipboardFormatter code, tests, and documentation. Never edit files directly
 inside `~/.hammerspoon/Spoons/ClipboardFormatter.spoon/`; always work in the
 source tree and deploy from there.
@@ -18,7 +18,7 @@ source tree and deploy from there.
 root and loads the spoon with `require`:
 
 ```lua
-local hsStringEvalRoot = os.getenv("HOME") .. "/Scripts/Metascripts/hsStringEval"
+local hsStringEvalRoot = os.getenv("HOME") .. "/Scripts/apps/hammerspoon/hsStringEval"
 package.path = package.path .. ";" .. hsStringEvalRoot .. "/?.lua"
 package.path = package.path .. ";" .. hsStringEvalRoot .. "/?/init.lua"
 
@@ -37,10 +37,18 @@ no rsync step needed during active development.
 
 ### Mode 2: Spoon Deploy (Production)
 
-Sync `src/` into the spoon bundle and load via `hs.loadSpoon`:
+Build the Spoon and deploy via the packaging script:
 
 ```bash
-mkdir -p ~/.hammerspoon/Spoons/ClipboardFormatter.spoon
+cd ~/Scripts/apps/hammerspoon/hsStringEval
+lua packaging/make_spoon.lua --version 1.0
+rsync -a --delete packaging/build/ClipboardFormatter.spoon/ \
+  ~/.hammerspoon/Spoons/ClipboardFormatter.spoon/
+```
+
+Or deploy directly from source (skips the build step):
+
+```bash
 rsync -a src/ ~/.hammerspoon/Spoons/ClipboardFormatter.spoon/
 cp docs.json ~/.hammerspoon/Spoons/ClipboardFormatter.spoon/docs.json
 ```
@@ -83,6 +91,12 @@ automatically.
 5. **Deploy** if running in Mode 2:
 
    ```bash
+   # Full build + deploy
+   lua packaging/make_spoon.lua && \
+   rsync -a --delete packaging/build/ClipboardFormatter.spoon/ \
+     ~/.hammerspoon/Spoons/ClipboardFormatter.spoon/
+
+   # Quick deploy from source (skip the build step)
    rsync -a src/ ~/.hammerspoon/Spoons/ClipboardFormatter.spoon/
    cp docs.json ~/.hammerspoon/Spoons/ClipboardFormatter.spoon/docs.json
    ```

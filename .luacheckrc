@@ -1,4 +1,4 @@
--- /Users/jason/Scripts/Metascripts/hsStringEval/.luacheckrc
+-- /Users/jason/Scripts/apps/hammerspoon/hsStringEval/.luacheckrc
 std = "luajit"
 
 unused_args = false

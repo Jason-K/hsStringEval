@@ -232,13 +232,13 @@ function Scenarios.testEdgeCases()
             local numericEdgeCases = {
                 "0",
                 "-0",
-                "2147483647", -- INT_MAX
-                "-2147483648", -- INT_MIN
-                "9223372036854775807", -- 64-bit max
+                "2147483647",           -- INT_MAX
+                "-2147483648",          -- INT_MIN
+                "9223372036854775807",  -- 64-bit max
                 "-9223372036854775808", -- 64-bit min
                 "0.0000000001",
                 "999999999999999999999",
-                "1e308", -- Large number
+                "1e308",  -- Large number
                 "1e-308", -- Small number
                 "NaN",
                 "Infinity",
@@ -254,14 +254,14 @@ function Scenarios.testEdgeCases()
 
         it("should handle string edge cases", function()
             local stringEdgeCases = {
-                "", -- Empty string
-                " ", -- Single space
-                "\t\n\r", -- Whitespace only
-                string.rep("a", 1), -- Single character
+                "",                     -- Empty string
+                " ",                    -- Single space
+                "\t\n\r",               -- Whitespace only
+                string.rep("a", 1),     -- Single character
                 string.rep("b", 10000), -- Long string
-                nil, -- Nil value (should not crash)
-                {}, -- Table (should not crash)
-                function() end, -- Function (should not crash)
+                nil,                    -- Nil value (should not crash)
+                {},                     -- Table (should not crash)
+                function() end,         -- Function (should not crash)
             }
 
             for _, testCase in ipairs(stringEdgeCases) do

@@ -2,6 +2,39 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Source Of Truth And Deployment Runbook
+
+- Canonical development path: `/Users/jason/Scripts/apps/hammerspoon/hsStringEval`
+- Do not edit runtime copy directly: `/Users/jason/.config/hammerspoon/Spoons/ClipboardFormatter.spoon`
+
+### Local Development Loop
+
+1. Edit source files in `src/`, `config/`, or `docs/`.
+2. Run quality checks:
+   - `./scripts/test.sh`
+   - `./scripts/lint.sh`
+3. Regenerate spoon docs when API/docstrings changed:
+   - `lua tools/generate_docs_json.lua`
+
+### Deploy To Local Hammerspoon Spoon
+
+```bash
+mkdir -p /Users/jason/.config/hammerspoon/Spoons/ClipboardFormatter.spoon
+rsync -a --delete --exclude '.git' --exclude '__pycache__' --exclude '.DS_Store' \
+  /Users/jason/Scripts/apps/hammerspoon/hsStringEval/src/ \
+  /Users/jason/.config/hammerspoon/Spoons/ClipboardFormatter.spoon/
+cp /Users/jason/Scripts/apps/hammerspoon/hsStringEval/docs.json \
+  /Users/jason/.config/hammerspoon/Spoons/ClipboardFormatter.spoon/docs.json
+cp /Users/jason/Scripts/apps/hammerspoon/hsStringEval/CLAUDE.md \
+  /Users/jason/.config/hammerspoon/Spoons/ClipboardFormatter.spoon/CLAUDE.md
+```
+
+### Post-Deploy Verification
+
+1. Reload Hammerspoon.
+2. Run a ClipboardFormatter hotkey (`FormatClip` or `FormatSelection`) and verify expected output.
+3. Confirm console has no `require` errors for `ClipboardFormatter` modules.
+
 ## Development Commands
 
 ### Testing
