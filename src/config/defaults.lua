@@ -10,7 +10,7 @@ return {
     },
     restoreClipboard = true,
     finderReplacement = {
-        default = "bloom",
+        default = "qspace",
     },
     processing = {
         throttleMs = constants.TIME.THROTTLE_DEFAULT,

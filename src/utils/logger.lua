@@ -342,7 +342,7 @@ function M.new(name, level, opts)
     if logFile == false then
         logFile = nil
     elseif logFile == nil and type(hs) == "table" and type(hs.configdir) == "string" then
-        logFile = hs.configdir .. "/logs/hsStringEval.log"
+        logFile = "~/Library/Logs/Hammerspoon/hsStringEval.log"
     end
     if logFile then
         ensureDirectory(logFile)

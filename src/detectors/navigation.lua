@@ -76,12 +76,14 @@ end
 local function openInFinder(path, logger, config)
     local expanded = expandPath(path)
     -- Determine which file manager app to use
-    local finderApp = "Bloom"
+    local finderApp = "qspace"
     if config then
         local finderSettings = config.finderReplacement or {}
-        local defaultFinder = finderSettings.default or "bloom"
+        local defaultFinder = finderSettings.default or "qspace"
         if defaultFinder == "qspace" then
             finderApp = "QSpace Pro"
+        elseif defaultFinder == "bloom" then
+            finderApp = "Bloom"
         end
     end
 
