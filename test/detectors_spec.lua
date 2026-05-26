@@ -153,8 +153,8 @@ describe("detectors", function()
         assert.equal("~/Documents", result.output)
         assert.is_true(result.sideEffectOnly)
         assert.is_table(context.__lastSideEffect)
-        assert.equal("qspace", context.__lastSideEffect.type)
-        assert.equal("Opened in QSpace", context.__lastSideEffect.message)
+        assert.equal("finder", context.__lastSideEffect.type)
+        assert.equal("Opened in QSpace Pro", context.__lastSideEffect.message)
         assert.equal(1, #helper.taskInvocations)
         local invocation = helper.taskInvocations[1]
         assert.equal("/usr/bin/open", invocation.command)
@@ -173,6 +173,22 @@ describe("detectors", function()
         assert.equal("browser", context.__lastSideEffect.type)
     end)
 
+    it("strips tracking query params before opening browser urls", function()
+        local ctor = helper.requireFresh("detectors.navigation")
+        local detector = ctor(helper.detectorDeps())
+        local context = {}
+        local url = "https://example.com/path?utm_source=newsletter&id=42&fbclid=abc#section"
+        local result = detector:match(url, context)
+        local expected = "https://example.com/path?id=42#section"
+
+        assert.is_table(result)
+        assert.equal(expected, result.output)
+        assert.equal(expected, helper.openedUrls[#helper.openedUrls])
+        assert.equal("browser", context.__lastSideEffect.type)
+        assert.equal(url, context.__lastSideEffect.originalUrl)
+        assert.equal(expected, context.__lastSideEffect.sanitizedUrl)
+        assert.is_true(context.__lastSideEffect.trackingStripped)
+    end)
     it("opens application urls using open -u", function()
         local ctor = helper.requireFresh("detectors.navigation")
         local detector = ctor(helper.detectorDeps())

@@ -10,7 +10,12 @@ return {
     },
     restoreClipboard = true,
     finderReplacement = {
+        -- bloom || qspace
         default = "qspace",
+    },
+    navigation = {
+        kagiPrivateSearchBaseUrl = nil,
+        kagiPrivateSearchOpRef = nil,
     },
     processing = {
         throttleMs = constants.TIME.THROTTLE_DEFAULT,
