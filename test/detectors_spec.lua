@@ -161,6 +161,28 @@ describe("detectors", function()
         assert.same({ "-a", "QSpace Pro", (os.getenv("HOME") or "") .. "/Documents" }, invocation.args)
     end)
 
+    it("resolves shell-style local aliases before opening paths", function()
+        local ctor = helper.requireFresh("detectors.navigation")
+        local detector = ctor(helper.detectorDeps())
+        local context = {}
+        local result = detector:match("$XDG_CONFIG_HOME/zsh", context)
+
+        assert.is_table(result)
+        assert.equal("$XDG_CONFIG_HOME/zsh", result.output)
+        assert.is_true(result.sideEffectOnly)
+        assert.is_table(context.__lastSideEffect)
+        assert.equal("finder", context.__lastSideEffect.type)
+        assert.equal("Opened in QSpace Pro", context.__lastSideEffect.message)
+        assert.equal(1, #helper.taskInvocations)
+
+        local invocation = helper.taskInvocations[1]
+        assert.equal("/usr/bin/open", invocation.command)
+        assert.same({
+                        "-a",
+                        "QSpace Pro",
+                        (os.getenv("HOME") or "") .. "/.config/zsh",
+                    }, invocation.args)
+    end)
     it("opens http urls in the default browser", function()
         local ctor = helper.requireFresh("detectors.navigation")
         local detector = ctor(helper.detectorDeps())

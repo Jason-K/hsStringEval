@@ -108,6 +108,109 @@ local function isAppUrl(text)
     return lower ~= "http" and lower ~= "https"
 end
 
+local PATH_ALIASES = {
+    XDG_BIN_HOME = "$HOME/.local/bin",
+    XDG_CACHE_HOME = "$HOME/.cache",
+    XDG_CONFIG_HOME = "$HOME/.config",
+    XDG_DATA_HOME = "$HOME/.local/share",
+    XDG_RUNTIME_DIR = "/tmp/user/$(id -u)",
+    XDG_STATE_HOME = "$HOME/.local/state",
+    ZDOTDIR = "$XDG_CONFIG_HOME/zsh",
+}
+
+local cachedUserId = nil
+
+local function getUserId()
+    if cachedUserId ~= nil then
+        return cachedUserId
+    end
+
+    local handle = io.popen("id -u")
+    if not handle then
+        return nil
+    end
+
+    local output = handle:read("*l")
+    handle:close()
+
+    if type(output) == "string" then
+        output = strings.trim(output)
+        if output ~= "" then
+            cachedUserId = output
+            return cachedUserId
+        end
+    end
+
+    return nil
+end
+
+local function expandAliasText(text, seen)
+    if type(text) ~= "string" or text == "" then
+        return text
+    end
+
+    seen = seen or {}
+    local current = text
+
+    for _ = 1, 8 do
+        local changed = false
+
+        local nextValue = current:gsub("%$%(%s*id%s+%-u%s*%)", function()
+            local userId = getUserId()
+            if userId and userId ~= "" then
+                changed = true
+                return userId
+            end
+            return "$(id -u)"
+        end)
+
+        nextValue = nextValue:gsub("%${([%a_][%w_]*)}", function(varName)
+            if seen[varName] then
+                return "${" .. varName .. "}"
+            end
+            local envValue = os.getenv(varName)
+            if envValue == nil or envValue == "" then
+                envValue = PATH_ALIASES[varName]
+            end
+            if type(envValue) ~= "string" or envValue == "" then
+                return "${" .. varName .. "}"
+            end
+            seen[varName] = true
+            local expanded = expandAliasText(envValue, seen)
+            seen[varName] = nil
+            changed = true
+            return expanded
+        end)
+
+        nextValue = nextValue:gsub("%$([%a_][%w_]*)", function(varName)
+            if seen[varName] then
+                return "$" .. varName
+            end
+            local envValue = os.getenv(varName)
+            if envValue == nil or envValue == "" then
+                envValue = PATH_ALIASES[varName]
+            end
+            if type(envValue) ~= "string" or envValue == "" then
+                return "$" .. varName
+            end
+            seen[varName] = true
+            local expanded = expandAliasText(envValue, seen)
+            seen[varName] = nil
+            changed = true
+            return expanded
+        end)
+
+        if not changed or nextValue == current then
+            current = nextValue
+            break
+        end
+
+        current = nextValue
+    end
+
+    return current
+end
+
 local function isLocalPath(text)
     if type(text) ~= "string" then
         return false
@@ -125,20 +228,25 @@ local function expandPath(path)
     if type(path) ~= "string" or path == "" then
         return path
     end
-    if path:sub(1, 1) == "~" then
+
+    local expanded = expandAliasText(path)
+
+    if expanded:sub(1, 1) == "~" then
         local home = os.getenv("HOME") or ""
-        if path == "~" then
+        if expanded == "~" then
             return home
         end
-        return home .. path:sub(2)
+        expanded = home .. expanded:sub(2)
     end
-    if path:sub(1, 1) == "." and hasHS() and hs.fs and hs.fs.pathToAbsolute then
-        local absolute = hs.fs.pathToAbsolute(path)
+
+    if expanded:sub(1, 1) == "." and hasHS() and hs.fs and hs.fs.pathToAbsolute then
+        local absolute = hs.fs.pathToAbsolute(expanded)
         if type(absolute) == "string" and absolute ~= "" then
             return absolute
         end
     end
-    return path
+
+    return expanded
 end
 
 local function runTask(executable, args, logger)
@@ -263,7 +371,7 @@ local function resolveKagiBaseUrl(logger, config)
         cachedKagiBaseUrl = configuredBaseUrl
         if logger and logger.d then
             logger.d("Navigation Kagi base URL source=config.navigation.kagiPrivateSearchBaseUrl preview=" ..
-            safeUrlPreview(cachedKagiBaseUrl))
+                safeUrlPreview(cachedKagiBaseUrl))
         end
         return cachedKagiBaseUrl
     end
@@ -336,9 +444,11 @@ return function(deps)
             -- deps.logger is injected by factory, context can override
             local logger = deps.logger or (context and context.logger)
 
-            if isLocalPath(trimmed) then
+            local expandedPath = expandPath(trimmed)
+
+            if isLocalPath(expandedPath) then
                 local config = deps.config or (context and context.config)
-                local ok, meta = openInFinder(trimmed, logger, config)
+                local ok, meta = openInFinder(expandedPath, logger, config)
                 if ok then
                     context.__lastSideEffect = meta
                     context.__handledByNavigation = true
