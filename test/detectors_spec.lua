@@ -234,7 +234,8 @@ describe("detectors", function()
         local _ = detector:match(query, context)
         assert.equal("kagi_search", context.__lastSideEffect.type)
         local opened = helper.openedUrls[#helper.openedUrls]
-        assert.matches("https://kagi.com/search%?q=", opened)
+        assert.matches("https://kagi.com/search", opened)
+        assert.matches("[?&]q=", opened)
         assert.matches("example%%20search", opened)
     end)
 

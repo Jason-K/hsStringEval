@@ -390,10 +390,32 @@ local function resolveKagiBaseUrl(logger, config)
     return cachedKagiBaseUrl
 end
 
+local function buildKagiSearchUrl(baseUrl, encodedQuery)
+    if type(baseUrl) ~= "string" or baseUrl == "" then
+        return nil
+    end
+
+    -- Support template-style URLs from user config/secrets.
+    if baseUrl:find("{query}", 1, true) then
+        return (baseUrl:gsub("{query}", function()
+            return encodedQuery
+        end))
+    end
+    if baseUrl:find("%s", 1, true) then
+        return (baseUrl:gsub("%%s", function()
+            return encodedQuery
+        end))
+    end
+
+    return baseUrl .. encodedQuery
+end
 local function openKagiSearch(query, logger, config)
     local encoded = urlEncode(query)
     local base_url = resolveKagiBaseUrl(logger, config)
-    local url = base_url .. encoded
+    local url = buildKagiSearchUrl(base_url, encoded)
+    if not url then
+        return false, "invalid_kagi_base_url"
+    end
     local ok, meta = openUrl(url, logger)
     if not ok then
         return false, meta

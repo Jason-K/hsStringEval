@@ -2,10 +2,16 @@
 set -euo pipefail
 
 LUA_VERSION="${LUA_VERSION:-5.4}"
+LUA_DIR="${LUA_DIR:-}"
+ROCKS_TREE="${ROCKS_TREE:-}"
 
 if ! command -v luarocks >/dev/null 2>&1; then
     echo "Error: luarocks is required to install test dependencies" >&2
     exit 1
+fi
+
+if [ -z "${LUA_DIR}" ] && [ -d "/opt/homebrew/opt/lua@5.4" ]; then
+    LUA_DIR="/opt/homebrew/opt/lua@5.4"
 fi
 
 # Packages required to run the Busted test suite locally. Versions are pinned
@@ -22,15 +28,26 @@ readonly ROCKS=(
     "mediator_lua 1.1.2-0"
 )
 
+luarocks_cmd() {
+    local args=(--lua-version="${LUA_VERSION}")
+    if [ -n "${LUA_DIR}" ]; then
+        args+=(--lua-dir="${LUA_DIR}")
+    fi
+    if [ -n "${ROCKS_TREE}" ]; then
+        args+=(--tree="${ROCKS_TREE}")
+    fi
+    luarocks "${args[@]}" "$@"
+}
+
 install_rock() {
     local name="$1"
     local version="$2"
-    if luarocks --lua-version="${LUA_VERSION}" show "${name}" "${version}" >/dev/null 2>&1; then
+    if luarocks_cmd show "${name}" "${version}" >/dev/null 2>&1; then
         echo "${name} ${version} already installed for Lua ${LUA_VERSION}"
         return
     fi
     echo "Installing ${name} ${version} for Lua ${LUA_VERSION}"
-    luarocks --lua-version="${LUA_VERSION}" install "${name}" "${version}" --force
+    luarocks_cmd install "${name}" "${version}" --force
 }
 
 for entry in "${ROCKS[@]}"; do

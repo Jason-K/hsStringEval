@@ -5,14 +5,33 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${SCRIPT_DIR}/.."
 cd "${ROOT_DIR}"
 
-if ! command -v busted >/dev/null 2>&1; then
-    echo "Error: busted is required to run tests" >&2
-    exit 1
+LUA_VERSION="${LUA_VERSION:-5.4}"
+if [ -d "/opt/homebrew/opt/lua@5.4" ]; then
+    LUA_DIR="/opt/homebrew/opt/lua@5.4"
+else
+    LUA_DIR="${LUA_DIR:-}"
 fi
 
 # Ensure LuaRocks paths (including busted modules) are available
 if command -v luarocks >/dev/null 2>&1; then
-    eval "$(luarocks --lua-version=5.4 path)"
+    if [ -n "${LUA_DIR}" ]; then
+        eval "$(luarocks --lua-version="${LUA_VERSION}" --lua-dir="${LUA_DIR}" path)"
+    else
+        eval "$(luarocks --lua-version="${LUA_VERSION}" path)"
+    fi
+fi
+
+BUSTED_BIN=""
+if [ -x "${HOME}/.luarocks/bin/busted" ]; then
+    BUSTED_BIN="${HOME}/.luarocks/bin/busted"
+elif command -v busted >/dev/null 2>&1; then
+    BUSTED_BIN="$(command -v busted)"
+fi
+
+if [ -z "${BUSTED_BIN}" ]; then
+    echo "Error: busted is required to run tests" >&2
+    echo "Run: ./scripts/install_test_deps.sh" >&2
+    exit 1
 fi
 
 # Ensure project sources and test helpers are discoverable via require
@@ -23,4 +42,4 @@ if [ "$#" -eq 0 ]; then
 fi
 
 # Load spec_helper for custom module loader
-busted --helper=spec_helper "$@"
+"${BUSTED_BIN}" --helper=spec_helper "$@"
