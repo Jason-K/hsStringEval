@@ -376,9 +376,9 @@ local function resolveKagiBaseUrl(logger, config)
         return cachedKagiBaseUrl
     end
 
-    local opRef = normalizeKagiBaseUrl(navigation.kagiPrivateSearchOpRef) or KAGI_OP_REF
+    local opRef = normalizeKagiBaseUrl(navigation.kagiPrivateSearchOpRef)
     local fromOp = nil
-    if type(getSecret) == "function" then
+    if opRef and type(getSecret) == "function" then
         fromOp = normalizeKagiBaseUrl(getSecret(opRef))
     end
 
