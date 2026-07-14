@@ -96,37 +96,37 @@ function ClipboardOperations.getTextWithRetry(config, logger)
     local retryConfig = config.retry or {}
 
     return executeWithRetry(function()
-        -- Try multiple methods in order
-        local content
+                                -- Try multiple methods in order
+                                local content
 
-        -- Method 1: Primary pasteboard
-        if hsUtils.hasPasteboard() then
-            content = hsUtils.getPasteboard()
-            if type(content) == "string" and content ~= "" then
-                return content
-            end
-        end
+                                -- Method 1: Primary pasteboard
+                                if hsUtils.hasPasteboard() then
+                                    content = hsUtils.getPasteboard()
+                                    if type(content) == "string" and content ~= "" then
+                                        return content
+                                    end
+                                end
 
-        -- Method 2: Find pasteboard
-        if hsUtils.hasPasteboard() then
-            content = hsUtils.getPasteboard("find")
-            if type(content) == "string" and content ~= "" then
-                return content
-            end
-        end
+                                -- Method 2: Find pasteboard
+                                if hsUtils.hasPasteboard() then
+                                    content = hsUtils.getPasteboard("find")
+                                    if type(content) == "string" and content ~= "" then
+                                        return content
+                                    end
+                                end
 
-        -- Method 3: AppleScript fallback
-        content = hsUtils.readClipboardFallback()
-        if type(content) == "string" and content ~= "" then
-            return content
-        end
+                                -- Method 3: AppleScript fallback
+                                content = hsUtils.readClipboardFallback()
+                                if type(content) == "string" and content ~= "" then
+                                    return content
+                                end
 
-        -- Method 4: Accessibility API (if available)
-        -- Note: This would require hs.uielement which may not be available in all contexts
-        -- For now, skip this method as it's not exposed through hammerspoon utils
+                                -- Method 4: Accessibility API (if available)
+                                -- Note: This would require hs.uielement which may not be available in all contexts
+                                -- For now, skip this method as it's not exposed through hammerspoon utils
 
-        return nil -- All methods failed
-    end, "clipboard read", retryConfig, logger)
+                                return nil -- All methods failed
+                            end, "clipboard read", retryConfig, logger)
 end
 
 -- Enhanced clipboard write with retry logic
@@ -139,32 +139,32 @@ function ClipboardOperations.setTextWithRetry(text, config, logger)
     local retryConfig = config.retry or {}
 
     return executeWithRetry(function()
-        -- Try multiple write methods
+                                -- Try multiple write methods
 
-        -- Method 1: Direct pasteboard write
-        if hsUtils.hasPasteboard() then
-            local ok, err = pcall(hsUtils.setPasteboard, text)
-            if ok then
-                -- Verify the write succeeded
-                local verify = hsUtils.getPasteboard()
-                if verify == text then
-                    return true
-                end
-            elseif logger and logger.w then
-                logger.w("Direct pasteboard write failed: " .. tostring(err))
-            end
-        end
+                                -- Method 1: Direct pasteboard write
+                                if hsUtils.hasPasteboard() then
+                                    local ok, err = pcall(hsUtils.setPasteboard, text)
+                                    if ok then
+                                        -- Verify the write succeeded
+                                        local verify = hsUtils.getPasteboard()
+                                        if verify == text then
+                                            return true
+                                        end
+                                    elseif logger and logger.w then
+                                        logger.w("Direct pasteboard write failed: " .. tostring(err))
+                                    end
+                                end
 
-        -- Method 2: AppleScript fallback
-        local ok, result = pcall(hsUtils.writeClipboardFallback, text)
-        if ok and result then
-            return true
-        elseif logger and logger.w then
-            logger.w("AppleScript write failed: " .. tostring(result))
-        end
+                                -- Method 2: AppleScript fallback
+                                local ok, result = pcall(hsUtils.writeClipboardFallback, text)
+                                if ok and result then
+                                    return true
+                                elseif logger and logger.w then
+                                    logger.w("AppleScript write failed: " .. tostring(result))
+                                end
 
-        return false
-    end, "clipboard write", retryConfig, logger) or false
+                                return false
+                            end, "clipboard write", retryConfig, logger) or false
 end
 
 -- Clear clipboard with retry logic
@@ -173,16 +173,16 @@ function ClipboardOperations.clearWithRetry(config, logger)
     local retryConfig = config.retry or {}
 
     return executeWithRetry(function()
-        if hsUtils.hasPasteboard() then
-            local ok, err = pcall(hsUtils.clearPasteboard)
-            if ok then
-                return true
-            elseif logger and logger.w then
-                logger.w("Clear pasteboard failed: " .. tostring(err))
-            end
-        end
-        return false
-    end, "clipboard clear", retryConfig, logger) or false
+                                if hsUtils.hasPasteboard() then
+                                    local ok, err = pcall(hsUtils.clearPasteboard)
+                                    if ok then
+                                        return true
+                                    elseif logger and logger.w then
+                                        logger.w("Clear pasteboard failed: " .. tostring(err))
+                                    end
+                                end
+                                return false
+                            end, "clipboard clear", retryConfig, logger) or false
 end
 
 -- Test clipboard functionality and return status
@@ -227,7 +227,7 @@ function ClipboardOperations.getStats()
         operationsSupported = {
             pasteboard = hsUtils.hasPasteboard(),
             timer = hsUtils.hasTimer ~= nil, -- hasTimer exists as internal helper
-            applescript = true -- Always available as fallback
+            applescript = true               -- Always available as fallback
         }
     }
 end
